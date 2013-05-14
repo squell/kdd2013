@@ -98,13 +98,10 @@ def nbs(node):
 
 print "creating quick access"
 
-test = dict()
-confirmed = dict()
-rejected = dict()
-
 for key in db:
-    # leave these as-is
+    # convert the train/test set for author-based lookup
     if key in ("Train","Valid"): 
+	db[key] = { rec.Author: rec for rec in db[key] }
 	continue
 
     # now that quick direct access is less of an issue, convert list into a dict
@@ -112,11 +109,11 @@ for key in db:
     if key == "Author":
 	for author in table.values():
 	    author.Paper = author_to_paper(author)
-	    if 'Valid' in author:
-		unconfirmed[author] = {link.Paper for link in author.Valid.Paper}
-	    if 'Train' in author:
-		confirmed[author] = {link.Paper for link in author.Train.ConfirmedPaper}
-		rejected [author] = {link.Paper for link in author.Train.RejectedPaper}
+	#    if 'Valid' in author:
+	#	unconfirmed[author] = {link.Paper for link in author.Valid.Paper}
+	#    if 'Train' in author:
+	#	confirmed[author] = {link.Paper for link in author.Train.ConfirmedPaper}
+	#	rejected [author] = {link.Paper for link in author.Train.RejectedPaper}
     elif key == "Paper":
 	for paper in table.values():
 	    paper.Author = paper_to_author(paper)
