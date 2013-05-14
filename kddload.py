@@ -78,7 +78,6 @@ def read_csv(table, force_creation=False):
 		    if not foreign: 
 			raise "warning foreign key:", newkey
 
-limit=100000
 read_csv("Conference")
 read_csv("Journal")
 read_csv("Author")
