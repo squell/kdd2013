@@ -56,9 +56,12 @@ def read_csv(table, force_creation=False):
 	for key, val in row.items():
 	    if key[-2:] == "Id":
 		newkey = key[:-2]
-		row[newkey] = foreign = db[newkey][int(val)]
+		try:
+		    row[newkey] = foreign = db[newkey][int(val)]
+		except IndexError:
+		    print "invalid foreign key:", table, newkey, val
 		if not foreign: 
-		    #print "invalid/empty foreign key:", newkey
+		    #print "null foreign key:", table, newkey, val
 		    pass
 		else:
 		    foreign.setdefault(table, set()).add(obj)
