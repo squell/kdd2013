@@ -1,5 +1,6 @@
 import sys
 import csv
+from math import log, pow
 
 class record (object):
     ''' a simple "coat hanger"
@@ -77,6 +78,7 @@ def read_csv(table, force_creation=False):
 		    if not foreign: 
 			raise "warning foreign key:", newkey
 
+limit=100000
 read_csv("Conference")
 read_csv("Journal")
 read_csv("Author")
@@ -129,32 +131,54 @@ def validate(author, paper):
 globals().update(db)
 print "done"
 
-def combined(metric, a, bs, G, aggregate=lambda x: float(sum(x))/len(x)):
+#############################################################
+# averaging utilities
+#############################################################
+
+default_nb = relate('Paper', 'Author')
+
+def average(nums):
+    return float(sum(x))/len(x)
+
+def geometric(nums):
+    return pow(reduce(lambda x,y: x*y, nums, 1.0), 1.0/len(nums))
+
+def harmonic(nums):
+    return len(nums)/sum(map(lambda x:1.0/x, nums))
+
+#############################################################
+# aggregating functions
+#############################################################
+
+def combined(metric, a, bs, G=default_nb, aggregate=average):
     return aggregate([ metric(a,b,G) for b in bs ])
 
-def lifted(metric, a, bs, G):
+def lifted(metric, a, bs, G=default_nb):
     big_b = set.union(*[G(b) for b in bs])
     def Gmod(obj):
 	return G(obj) if obj is not big_b else big_b
     return metric(a, big_b, Gmod)
 
-def common_neighbours(a, b, G):
+#############################################################
+# metrics defined using a neighbor function
+#############################################################
+
+def common_neighbours(a, b, G=default_nb):
     return len(G(a) & G(b))
 
-def jaccard(a, b, G):
+def jaccard(a, b, G=default_nb):
     return len(G(a) & G(b)) / float(len(G(a) | G(b)))
 
-from math import log
-def adamic_adar(a, b, G):
+def adamic_adar(a, b, G=default_nb):
     try:
 	return sum([1.0/log(len(G(z))) for z in G(a) & G(b)])
     except ZeroDivisionError:
 	return float("inf")
 
-def preferential(a, b, G):
+def preferential(a, b, G=default_nb):
     return len(G(a))*len(G(b))
 
-def path_len(a,b, G):
+def path_len(a, b, G=default_nb):
     open   = [(a,0)]
     closed = set()
     for node, D in open:
