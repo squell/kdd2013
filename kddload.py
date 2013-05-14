@@ -54,13 +54,13 @@ def read_csv(table, force_creation=False):
 
 	# convert references in row into pythonesque
 	for key, val in row.items():
-	    if key[-2:] == "Id":
+	    if key[-2:] == "Id" and len(key) > 2:
 		newkey = key[:-2]
 		try:
 		    row[newkey] = foreign = db[newkey][int(val)]
 		except IndexError:
+		    #print "invalid foreign key:", table, newkey, val
 		    row[newkey] = None
-		    print "invalid foreign key:", table, newkey, val
 		if not foreign: 
 		    #print "null foreign key:", table, newkey, val
 		    pass
