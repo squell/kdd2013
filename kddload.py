@@ -155,6 +155,15 @@ def adamic_adar(a, b, G):
 def preferential(a, b, G):
     return len(G(a))*len(G(b))
 
+def path_len(a,b, G):
+    open   = [(a,0)]
+    closed = set()
+    for node, D in open:
+	if node is b: return D
+	closed.add(node)
+	open.extend([(x,D+1) for x in G(node) - closed])
+    return float("inf")
+
 # this doesnt work...
 #print "pickling"
 #import cPickle as pickle
