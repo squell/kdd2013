@@ -24,8 +24,7 @@ class record (object):
     def __contains__(self, name):
     	return name in self.__dict__
     def __getattr__(self, name):
-	#return self.__dict__[name]
-	return self.get(name, set())
+	return self.__dict__.get(name, set())
 
 db = dict()
 
@@ -44,7 +43,7 @@ def read_csv(table, force_creation=False):
 
 	# add identifiable items
 	if 'Id' in row:
-	    idx = int(row['Id'])
+	    row['Id'] = idx = int(row['Id'])
 	    #grow dataset if necessary
 	    while idx >= len(dataset):
 		dataset.extend([None]*(idx+1-len(dataset)))
@@ -55,20 +54,21 @@ def read_csv(table, force_creation=False):
 	# convert references in row into pythonesque
 	for key, val in row.items():
 	    if key[-2:] == "Id" and len(key) > 2:
+		del row[key]
 		newkey = key[:-2]
 		try:
 		    row[newkey] = foreign = db[newkey][int(val)]
 		except IndexError:
 		    #print "invalid foreign key:", table, newkey, val
-		    row[newkey] = None
+		    row[newkey] = foreign = None
 		if not foreign: 
 		    #print "null foreign key:", table, newkey, val
 		    pass
 		else:
 		    foreign.setdefault(table, set()).add(obj)
-		del row[key]
 	    elif key[-3:] == "Ids":
 		# we dont back-reference these #
+		del row[key]
 		newkey = key[:-3]
 		row[newkey] = links = list()
 		for subval in val.split():
@@ -76,12 +76,13 @@ def read_csv(table, force_creation=False):
 		    links.append(foreign)
 		    if not foreign: 
 			raise "warning foreign key:", newkey
-		del row[key]
 
 read_csv("Conference")
 read_csv("Journal")
 read_csv("Author")
+limit = 10000
 read_csv("Paper")
+limit = 10000
 read_csv("PaperAuthor")
 
 db['DeletedPaper'] = db['Paper']
