@@ -2,12 +2,23 @@ import sys
 import csv
 
 class record (object):
+    ''' a simple "coat hanger"
+
+    using a regular dictionary is annoying
+    - you dont want to see its representation all the time
+    - not hashable 
+    - it is nicer to type x.blaabla.werewr than x['blabla']['werewr'] 
+    '''
     def __init__(self, d={}):
 	self.__dict__ = d
     def setdefault(self, name, val):
 	return self.__dict__.setdefault(name, val)
     def keys(self):
 	return self.__dict__.keys()
+    def values(self):
+	return self.__dict__.values()
+    def items(self):
+	return self.__dict__.items()
     def __getitem__(self, name):
 	return self.__dict__[name]
     def __contains__(self, name):
@@ -17,12 +28,17 @@ class record (object):
 
 db = dict()
 
-def read_csv(table):
+limit = -1
+
+def read_csv(table, force_creation=False):
+    global limit
     print "reading", table
-    dataset = [None]
+    dataset = []
     db[table] = dataset
 
     for row in csv.DictReader(open(table+".csv", 'rb')):
+	if limit == 0: break
+	limit -= 1
 	obj = record(row)
 
 	# add identifiable items
@@ -30,9 +46,11 @@ def read_csv(table):
 	    idx = int(row['Id'])
 	    #grow dataset if necessary
 	    while idx >= len(dataset):
-		dataset.extend([None]*len(dataset))
+		dataset.extend([None]*(idx+1-len(dataset)))
 	    dataset[idx] = obj
 	    del row['Id']
+	elif force_creation:
+	    dataset.append(obj)
 
 	# convert references in row into pythonesque
 	for key, val in row.items():
@@ -59,13 +77,15 @@ def read_csv(table):
 read_csv("Conference")
 read_csv("Journal")
 read_csv("Author")
+limit = 100000
 read_csv("Paper")
+limit = 10000
 read_csv("PaperAuthor")
 
 db['DeletedPaper'] = db['Paper']
 db['ConfirmedPaper'] = db['Paper']
-read_csv("Train")
-read_csv("Valid")
+read_csv("Train", True)
+read_csv("Valid", True)
 
 def author_to_paper(author):
     return { link.Paper for link in author.PaperAuthor }
@@ -82,24 +102,31 @@ test = dict()
 confirmed = dict()
 rejected = dict()
 
-for key, table in db:
+for key in db:
+    # leave these as-is
+    if key in ("Train","Valid"): 
+	continue
+
+    # now that quick direct access is less of an issue, convert list into a dict
+    table = db[key] = dict(filter(lambda x: x[1] is not None,  enumerate(db[key])))
     if key == "Author":
-	for node in compact:
-	    node.Papers = author_to_paper(node)
-	    if 'Valid' in node:
-		unconfirmed[node] = {link.Paper for link in node.Valid.Paper}
-	    if 'Train' in node:
-		confirmed[node] = {link.Paper for link in node.Train.ConfirmedPaper}
-		rejected [node] = {link.Paper for link in node.Train.RejectedPaper}
+	for author in table.values():
+	    author.Paper = author_to_paper(author)
+	    if 'Valid' in author:
+		unconfirmed[author] = {link.Paper for link in author.Valid.Paper}
+	    if 'Train' in author:
+		confirmed[author] = {link.Paper for link in author.Train.ConfirmedPaper}
+		rejected [author] = {link.Paper for link in author.Train.RejectedPaper}
     elif key == "Paper":
-	for node in compact:
-	    node.Authors = paper_to_author(node)
+	for paper in table.values():
+	    paper.Author = paper_to_author(paper)
 
 def validate(author, paper):
-    if paper in confirmed[node]: return True
-    if paper in rejected[node]:  return False
+    if paper in confirmed[author]: return True
+    if paper in rejected [author]: return False
     raise Exception("paper not in trainset")
 
+# dump everything in the module scope; dirty but works!
 globals().update(db)
 print "done"
 
