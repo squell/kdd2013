@@ -25,7 +25,7 @@ class record (object):
     	return name in self.__dict__
     def __getattr__(self, name):
 	#return self.__dict__[name]
-	return self.setdefault(name, set())
+	return self.get(name, set())
 
 db = dict()
 
