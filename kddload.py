@@ -77,9 +77,7 @@ def read_csv(table, force_creation=False):
 read_csv("Conference")
 read_csv("Journal")
 read_csv("Author")
-limit = 100000
 read_csv("Paper")
-limit = 10000
 read_csv("PaperAuthor")
 
 db['DeletedPaper'] = db['Paper']
