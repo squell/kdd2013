@@ -24,6 +24,7 @@ class record (object):
     def __contains__(self, name):
     	return name in self.__dict__
     def __getattr__(self, name):
+	#return self.__dict__[name]
 	return self.setdefault(name, set())
 
 db = dict()
@@ -59,6 +60,7 @@ def read_csv(table, force_creation=False):
 		try:
 		    row[newkey] = foreign = db[newkey][int(val)]
 		except IndexError:
+		    row[newkey] = None
 		    print "invalid foreign key:", table, newkey, val
 		if not foreign: 
 		    #print "null foreign key:", table, newkey, val
