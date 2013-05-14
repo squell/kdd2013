@@ -49,7 +49,6 @@ def read_csv(table, force_creation=False):
 	    while idx >= len(dataset):
 		dataset.extend([None]*(idx+1-len(dataset)))
 	    dataset[idx] = obj
-	    del row['Id']
 	elif force_creation:
 	    dataset.append(obj)
 
@@ -91,13 +90,14 @@ read_csv("Train", True)
 read_csv("Valid", True)
 
 def author_to_paper(author):
-    return { link.Paper for link in author.PaperAuthor }
+    return { link.Paper for link in author.PaperAuthor if link.Paper }
 
 def paper_to_author(paper):
-    return { link.Author for link in paper.PaperAuthor }
+    return { link.Author for link in paper.PaperAuthor if link.Author }
 
-def nbs(node):
-    return { link.Paper if link.Paper is not node else link.Author for link in node.PaperAuthor }
+# in case the neighbour function has to operate on two different types of node
+def relate(table1, table2=None):
+    return lambda rec: rec[table1] if table1 in rec else rec[table2]
 
 print "creating quick access"
 
@@ -130,6 +130,15 @@ def validate(author, paper):
 globals().update(db)
 print "done"
 
+def combined(metric, a, bs, G, aggregate=lambda x: float(sum(x))/len(x)):
+    return aggregate([ metric(a,b,G) for b in bs ])
+
+def lifted(metric, a, bs, G):
+    big_b = set.union(*[G(b) for b in bs])
+    def Gmod(obj):
+	return G(obj) if obj is not big_b else big_b
+    return metric(a, big_b, Gmod)
+
 def common_neighbours(a, b, G):
     return len(G(a) & G(b))
 
@@ -138,7 +147,13 @@ def jaccard(a, b, G):
 
 from math import log
 def adamic_adar(a, b, G):
-    return sum((1.0/log(len(G(z))) for z in G(a) & G(b)))
+    try:
+	return sum([1.0/log(len(G(z))) for z in G(a) & G(b)])
+    except ZeroDivisionError:
+	return float("inf")
+
+def preferential(a, b, G):
+    return len(G(a))*len(G(b))
 
 # this doesnt work...
 #print "pickling"
