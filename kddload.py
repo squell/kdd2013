@@ -96,12 +96,12 @@ print "creating quick access"
 
 def hardwire(table, relation, foreign):
     tmp = { link[foreign] for link in table.get(relation,[]) if foreign in link }
-    tmp -= {table}
+    tmp -= {None,table}
     return tmp
 
 def hardwire_union(table, relation, foreign):
     tmp = { item for link in table.get(relation,[]) for item in link.get(foreign,[]) if item }
-    tmp -= {table}
+    tmp -= {None,table}
     return tmp
 
 for key in db:
