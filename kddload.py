@@ -96,6 +96,12 @@ def author_to_paper(author):
 def paper_to_author(paper):
     return { link.Author for link in paper.PaperAuthor if link.Author }
 
+def author_to_author(author):
+    return { link2.Author for link in author.PaperAuthor if link.Paper for link2 in link.Paper.PaperAuthor if link2.Author and link2.Author is not author }
+
+def paper_to_paper(paper):
+    return { link2.Paper for link in paper.AuthorPaper if link.Author for link2 in link.Author.AuthorPaper if link2.Paper and link2.Paper is not paper }
+
 print "creating quick access"
 
 for key in db:
@@ -109,6 +115,7 @@ for key in db:
     if key == "Author":
 	for author in table.values():
 	    author.Paper = author_to_paper(author)
+	    author.CoAuthor = author_to_author(author)
 	#    if 'Valid' in author:
 	#	unconfirmed[author] = {link.Paper for link in author.Valid.Paper}
 	#    if 'Train' in author:
@@ -117,6 +124,7 @@ for key in db:
     elif key == "Paper":
 	for paper in table.values():
 	    paper.Author = paper_to_author(paper)
+	    paper.CoPaper = paper_to_paper(paper)
 
 #def validate(author, paper):
 #    if paper in confirmed[author]: return True
@@ -131,13 +139,13 @@ print "done"
 # neighbour definitions
 #############################################################
 
-default_nb = relate('Paper', 'Author')
-
 def relate(table1, table2=None):
     return lambda rec: rec[table1] if table1 in rec else rec[table2]
 
+default_nb = relate('Paper', 'Author')
+
 def nb_nb(G1, G2):
-    return lambda rec: { G2(z) for z in G1(rec) }
+    return lambda rec: set.union(*(G2(z) for z in G1(rec)))
 
 def collapse(table1, table2=None):
     R = relate(table1, table2)
@@ -232,4 +240,22 @@ def map_score(score):
 	return sorted(papers, key=lambda paper: score(author, paper), reverse=True)
     return map_rank(score_to_rank)
 
+#############################################################
+# get input for a normal clsssifier
+#############################################################
+
+def train_data():
+    '''returns (unpreprocessed) train_set, label_set'''
+    A = []
+    for author, challenge in Train.iteritems():
+	confirmed = challenge.ConfirmedPaper
+	deleted   = challenge.DeletedPaper
+	A.extend([((author, paper),True)  for paper in confirmed])
+	A.extend([((author, paper),False) for paper in deleted])
+    random.shuffle(A)
+    return zip(*A)
+
+def test_data():
+    '''returns (unpreprocessed) test_set'''
+    return [(author, paper) for author,x in Valid.iteritems() for paper in x]
 
