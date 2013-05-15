@@ -96,12 +96,6 @@ def author_to_paper(author):
 def paper_to_author(paper):
     return { link.Author for link in paper.PaperAuthor if link.Author }
 
-def author_to_author(author):
-    return { link2.Author for link in author.PaperAuthor if link.Paper for link2 in link.Paper.PaperAuthor if link2.Author and link2.Author is not author }
-
-def paper_to_paper(paper):
-    return { link2.Paper for link in paper.AuthorPaper if link.Author for link2 in link.Author.AuthorPaper if link2.Paper and link2.Paper is not paper }
-
 print "creating quick access"
 
 for key in db:
@@ -114,8 +108,10 @@ for key in db:
     table = db[key] = dict(filter(lambda x: x[1] is not None,  enumerate(db[key])))
     if key == "Author":
 	for author in table.values():
+	    # precompute several links
 	    author.Paper = author_to_paper(author)
-	    author.CoAuthor = author_to_author(author)
+	    author.CoAuthor = set.union(set(),*[p.Author for p in author.Paper]) - {None,author}
+	    author.Publish  = set.union(set(),*[{p.Journal,p.Conference} for p in author.Paper]) - {None}
 	#    if 'Valid' in author:
 	#	unconfirmed[author] = {link.Paper for link in author.Valid.Paper}
 	#    if 'Train' in author:
@@ -124,7 +120,9 @@ for key in db:
     elif key == "Paper":
 	for paper in table.values():
 	    paper.Author = paper_to_author(paper)
-	    paper.CoPaper = paper_to_paper(paper)
+	    paper.CoPaper = set.union(set(),*[a.Paper for a in paper.Author]) - {None,paper}
+	    paper.Publish = {p.Journal, p.Conference} - {None}
+	    paper.LikePaper = set.union(set(),*[j.Paper for j in paper.Publish]) - {None,paper}
 
 #def validate(author, paper):
 #    if paper in confirmed[author]: return True
