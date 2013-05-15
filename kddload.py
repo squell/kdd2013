@@ -15,6 +15,8 @@ class record (object):
 	self.__dict__ = d
     def setdefault(self, name, val):
 	return self.__dict__.setdefault(name, val)
+    def get(self, name, val):
+	return self.__dict__.get(name, val)
     def keys(self):
 	return self.__dict__.keys()
     def values(self):
@@ -90,13 +92,17 @@ db['ConfirmedPaper'] = db['Paper']
 read_csv("Train", True)
 read_csv("Valid", True)
 
-def author_to_paper(author):
-    return { link.Paper for link in author.PaperAuthor if link.Paper }
-
-def paper_to_author(paper):
-    return { link.Author for link in paper.PaperAuthor if link.Author }
-
 print "creating quick access"
+
+def hardwire(table, relation, foreign):
+    tmp = { link[foreign] for link in table.get(relation,[]) if foreign in link }
+    tmp -= {table}
+    return tmp
+
+def hardwire_union(table, relation, foreign):
+    tmp = { item for link in table.get(relation,[]) for item in link.get(foreign,[]) if item }
+    tmp -= {table}
+    return tmp
 
 for key in db:
     # convert the train/test set for author-based lookup
@@ -106,28 +112,22 @@ for key in db:
 
     # now that quick direct access is less of an issue, convert list into a dict
     table = db[key] = dict(filter(lambda x: x[1] is not None,  enumerate(db[key])))
-    if key == "Author":
-	for author in table.values():
-	    # precompute several links
-	    author.Paper = author_to_paper(author)
-	    author.CoAuthor = set.union(set(),*[p.Author for p in author.Paper]) - {None,author}
-	    author.Publish  = set.union(set(),*[{p.Journal,p.Conference} for p in author.Paper]) - {None}
-	#    if 'Valid' in author:
-	#	unconfirmed[author] = {link.Paper for link in author.Valid.Paper}
-	#    if 'Train' in author:
-	#	confirmed[author] = {link.Paper for link in author.Train.ConfirmedPaper}
-	#	rejected [author] = {link.Paper for link in author.Train.RejectedPaper}
-    elif key == "Paper":
-	for paper in table.values():
-	    paper.Author = paper_to_author(paper)
-	    paper.CoPaper = set.union(set(),*[a.Paper for a in paper.Author]) - {None,paper}
-	    paper.Publish = {p.Journal, p.Conference} - {None}
-	    paper.LikePaper = set.union(set(),*[j.Paper for j in paper.Publish]) - {None,paper}
 
-#def validate(author, paper):
-#    if paper in confirmed[author]: return True
-#    if paper in rejected [author]: return False
-#    raise Exception("paper not in trainset")
+for paper in db['Paper'].values():
+    # hop-0
+    paper.Publish = {paper.Journal, paper.Conference} - {None}
+    paper.Author = hardwire(paper, 'PaperAuthor', 'Author')
+    # hop-1; expensive!
+    #paper.CoPaper = hardwire_union(paper, 'Author', 'Paper')
+    # hop-1; but REALLY expensive!
+    #paper.LikePaper = hardwire_union(paper, 'Publish', 'Paper')
+
+for author in db['Author'].values():
+    # hop-0 
+    author.Paper = hardwire(author, 'PaperAuthor', 'Paper')
+    # hop-1
+    author.CoAuthor = hardwire_union(author, 'Paper', 'Author')
+    author.Publish = hardwire_union(author, 'Paper', 'Publish')
 
 # dump everything in the module scope; dirty but works!
 globals().update(db)
@@ -194,6 +194,7 @@ def adamic_adar(a, b, G=default_nb):
 def preferential(a, b, G=default_nb):
     return len(G(a))*len(G(b))
 
+# this is slow; obviously
 def path_len(a, b, G=default_nb):
     open   = [(a,0)]
     closed = set()
@@ -204,10 +205,23 @@ def path_len(a, b, G=default_nb):
     return float("inf")
 
 #############################################################
+# not sure if python has this -- run multiple functions
+# on the same arguments
+#############################################################
+
+def multi(fs, *args, **kwargs):
+    return map(lambda f: f(*args, **kwargs), fs)
+
+def holistic(metric, a, b, Gs):
+    '''try various distance metrics'''
+    return map(lambda G: metric(a,b,G), Gs)
+
+#############################################################
 # average precision
 #############################################################
 
-def ap_rank(actual, ranked):
+def avg_prec(actual, ranked):
+    'actual: all positive samples; ranked: ranking produced'
     if not actual: return 1.0
     acc = 0
     TP = 0
@@ -218,10 +232,11 @@ def ap_rank(actual, ranked):
     return acc / TP
 
 #############################################################
-# using a simple score
+# create ranking using a rank/score function
 #############################################################
 
 def map_rank(ranking):
+    'ranking: function of author, paper -> ranking of paper'
     prec = 0
     N = 0
     for author, challenge in Train.iteritems():
@@ -229,11 +244,12 @@ def map_rank(ranking):
 	deleted   = challenge.DeletedPaper
 	maybe     = confirmed + deleted
 	random.shuffle(maybe)
-	prec += ap_score(confirmed, ranking(author, maybe))
+	prec += avg_prec(confirmed, ranking(author, maybe))
 	N += 1
     return prec/float(N)
 
 def map_score(score):
+    'score: function of author, paper -> value'
     def score_to_rank(author,papers):
 	return sorted(papers, key=lambda paper: score(author, paper), reverse=True)
     return map_rank(score_to_rank)
@@ -243,17 +259,27 @@ def map_score(score):
 #############################################################
 
 def train_data():
-    '''returns (unpreprocessed) train_set, label_set'''
+    '''returns (unpreprocessed) train_set, label_set
+    where train_set is a list of of (author, paper) tuples
+    '''
     A = []
     for author, challenge in Train.iteritems():
 	confirmed = challenge.ConfirmedPaper
 	deleted   = challenge.DeletedPaper
 	A.extend([((author, paper),True)  for paper in confirmed])
 	A.extend([((author, paper),False) for paper in deleted])
-    random.shuffle(A)
     return zip(*A)
 
 def test_data():
     '''returns (unpreprocessed) test_set'''
     return [(author, paper) for author,x in Valid.iteritems() for paper in x]
+
+def MAP(prediction, train_set, label_set):
+    '''calculates MAP for use with a sklearn-classifier'''
+    #todo
+    pass
+
+#############################################################
+# 
+#############################################################
 
