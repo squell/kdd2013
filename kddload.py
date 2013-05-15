@@ -1,6 +1,7 @@
 import sys
 import csv
-from math import log, pow
+import math
+import random
 
 class record (object):
     ''' a simple "coat hanger"
@@ -29,7 +30,7 @@ class record (object):
 
 db = dict()
 
-limit = -1
+limit = int(sys.argv[1]) if len(sys.argv) > 1 else -1
 
 def read_csv(table, force_creation=False):
     global limit
@@ -121,10 +122,10 @@ for key in db:
 	for paper in table.values():
 	    paper.Author = paper_to_author(paper)
 
-def validate(author, paper):
-    if paper in confirmed[author]: return True
-    if paper in rejected [author]: return False
-    raise Exception("paper not in trainset")
+#def validate(author, paper):
+#    if paper in confirmed[author]: return True
+#    if paper in rejected [author]: return False
+#    raise Exception("paper not in trainset")
 
 # dump everything in the module scope; dirty but works!
 globals().update(db)
@@ -137,10 +138,10 @@ print "done"
 default_nb = relate('Paper', 'Author')
 
 def average(nums):
-    return float(sum(x))/len(x)
+    return float(sum(nums))/len(nums)
 
 def geometric(nums):
-    return pow(reduce(lambda x,y: x*y, nums, 1.0), 1.0/len(nums))
+    return math.pow(reduce(lambda x,y: x*y, nums, 1.0), 1.0/len(nums))
 
 def harmonic(nums):
     return len(nums)/sum(map(lambda x:1.0/x, nums))
@@ -170,7 +171,7 @@ def jaccard(a, b, G=default_nb):
 
 def adamic_adar(a, b, G=default_nb):
     try:
-	return sum([1.0/log(len(G(z))) for z in G(a) & G(b)])
+	return sum([1.0/math.log(len(G(z))) for z in G(a) & G(b)])
     except ZeroDivisionError:
 	return float("inf")
 
@@ -186,9 +187,39 @@ def path_len(a, b, G=default_nb):
 	open.extend([(x,D+1) for x in G(node) - closed])
     return float("inf")
 
-# this doesnt work...
-#print "pickling"
-#import cPickle as pickle
-#with open("fridge", 'wb') as outf:
-#    pickle.Pickler(outf, -1).dump(db)
+#############################################################
+# average precision
+#############################################################
+
+def ap_rank(actual, ranked):
+    if not actual: return 1.0
+    acc = 0
+    TP = 0
+    for P, paper in enumerate(ranked,1):
+	if paper in actual:
+	    TP  += 1
+	    acc += TP/float(P)
+    return acc / TP
+
+#############################################################
+# using a simple score
+#############################################################
+
+def map_rank(ranking):
+    prec = 0
+    N = 0
+    for author, challenge in Train.iteritems():
+	confirmed = challenge.ConfirmedPaper
+	deleted   = challenge.DeletedPaper
+	maybe     = confirmed + deleted
+	random.shuffle(maybe)
+	prec += ap_score(confirmed, ranking(author, maybe))
+	N += 1
+    return prec/float(N)
+
+def map_score(score):
+    def score_to_rank(author,papers):
+	return sorted(papers, key=lambda paper: score(author, paper), reverse=True)
+    return map_rank(score_to_rank)
+
 
