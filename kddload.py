@@ -96,10 +96,6 @@ def author_to_paper(author):
 def paper_to_author(paper):
     return { link.Author for link in paper.PaperAuthor if link.Author }
 
-# in case the neighbour function has to operate on two different types of node
-def relate(table1, table2=None):
-    return lambda rec: rec[table1] if table1 in rec else rec[table2]
-
 print "creating quick access"
 
 for key in db:
@@ -132,10 +128,24 @@ globals().update(db)
 print "done"
 
 #############################################################
-# averaging utilities
+# neighbour definitions
 #############################################################
 
 default_nb = relate('Paper', 'Author')
+
+def relate(table1, table2=None):
+    return lambda rec: rec[table1] if table1 in rec else rec[table2]
+
+def nb_nb(G1, G2):
+    return lambda rec: { G2(z) for z in G1(rec) }
+
+def collapse(table1, table2=None):
+    R = relate(table1, table2)
+    return nb_nb(R,R)
+
+#############################################################
+# averaging utilities
+#############################################################
 
 def average(nums):
     return float(sum(nums))/len(nums)
