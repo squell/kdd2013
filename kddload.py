@@ -94,15 +94,9 @@ read_csv("Valid", True)
 
 print "creating quick access"
 
-def hardwire(table, relation, foreign):
-    tmp = { link[foreign] for link in table.get(relation,[]) if foreign in link }
-    tmp -= {None,table}
-    return tmp
-
-def hardwire_union(table, relation, foreign):
-    tmp = { item for link in table.get(relation,[]) for item in link.get(foreign,[]) if item }
-    tmp -= {None,table}
-    return tmp
+def enable(fn):
+    'use this as a decorator (see below)'
+    fn()
 
 for key in db:
     # convert the train/test set for author-based lookup
@@ -113,26 +107,45 @@ for key in db:
     # now that quick direct access is less of an issue, convert list into a dict
     table = db[key] = dict(filter(lambda x: x[1] is not None,  enumerate(db[key])))
 
-for paper in db['Paper'].values():
-    # hop-0
-    paper.Publish = {paper.Journal, paper.Conference} - {None}
-    paper.Author = hardwire(paper, 'PaperAuthor', 'Author')
-    # hop-1; expensive!
-    #paper.CoPaper = hardwire_union(paper, 'Author', 'Paper')
-    # hop-1; but REALLY expensive!
-    #paper.LikePaper = hardwire_union(paper, 'Publish', 'Paper')
-
 for author in db['Author'].values():
     if author.Train:
 	author.Train = author.Train.pop()
     if author.Valid:
 	author.Valid = author.Valid.pop()
-    # hop-0 
-    author.Paper = hardwire(author, 'PaperAuthor', 'Paper')
-    # hop-1
-    author.CoAuthor = hardwire_union(author, 'Paper', 'Author')
-    author.Publish = hardwire_union(author, 'Paper', 'Publish')
 
+def hardwire(table, relation, foreign):
+    tmp = { link[foreign] for link in table.get(relation,[]) if foreign in link }
+    tmp -= {None,table}
+    return tmp
+
+def hardwire_union(table, relation, foreign):
+    tmp = { item for link in table.get(relation,[]) for item in link.get(foreign,[]) if item }
+    tmp -= {None,table}
+    return tmp
+
+@enable
+def annotate_papers():
+    for paper in db['Paper'].values():
+	# hop-0
+	paper.Publish = {paper.Journal, paper.Conference} - {None}
+	paper.Author = hardwire(paper, 'PaperAuthor', 'Author')
+	# hop-1; expensive!
+	#paper.CoPaper = hardwire_union(paper, 'Author', 'Paper')
+	# hop-1; but REALLY expensive!
+	#paper.LikePaper = hardwire_union(paper, 'Publish', 'Paper')
+
+@enable
+def annotate_authors(excluded_papers=lambda x: x.ConfirmedPaper|x.DeletedPaper|x.Valid):
+    for author in db['Author'].values():
+	# hop-0 
+	author.Paper = hardwire(author, 'PaperAuthor', 'Paper') - excluded_papers(author)
+	# hop-1
+	author.CoAuthor = hardwire_union(author, 'Paper', 'Author')
+	author.Publish = hardwire_union(author, 'Paper', 'Publish')
+
+print "creating word counts"
+
+@enable
 def make_word_cloud():
     F = db['WordFreq'] = {}
     for paper in db['Paper'].values():
@@ -140,9 +153,6 @@ def make_word_cloud():
 	for w in paper.Voc: F[w] = F.get(w,0)+1
     for author in db['Author'].values():
     	author.Voc = hardwire_union(author, 'Paper', 'Voc')
-
-print "creating word counts"
-#make_word_cloud()
 
 # dump everything in the module scope; dirty but works!
 globals().update(db)
