@@ -129,6 +129,17 @@ for author in db['Author'].values():
     author.CoAuthor = hardwire_union(author, 'Paper', 'Author')
     author.Publish = hardwire_union(author, 'Paper', 'Publish')
 
+def make_word_cloud():
+    F = db['WordFreq'] = {}
+    for paper in db['Paper'].values():
+    	paper.Voc = set(paper.Title.split())
+	for w in paper.Voc: F[w] = F.get(w,0)+1
+    for author in db['Author'].values():
+    	author.Voc = hardwire_union(author, 'Paper', 'Voc')
+
+print "creating word counts"
+make_word_cloud()
+
 # dump everything in the module scope; dirty but works!
 globals().update(db)
 print "done"
@@ -282,27 +293,27 @@ def map_score(score):
 #############################################################
 
 def train_data():
-    '''returns (unpreprocessed) author_set, paper_set, label_set
+    '''returns (unpreprocessed) zip(author_set, paper_set), label_set
     where train_set is a list of of (author, paper) tuples
     '''
     A = []
     for author, challenge in Train.iteritems():
 	confirmed = challenge.ConfirmedPaper
 	deleted   = challenge.DeletedPaper
-	A.extend([(author,paper,True)  for paper in confirmed])
-	A.extend([(author,paper,False) for paper in deleted])
+	A.extend([((author,paper),True)  for paper in confirmed])
+	A.extend([((author,paper),False) for paper in deleted])
     return zip(*A)
 
 def test_data():
     '''returns (unpreprocessed) test_set'''
     return [(author, paper) for author,x in Valid.iteritems() for paper in x]
 
-def MAP(prediction, author_set, label_set):
+def MAP(prediction_set, train_set, label_set):
     '''calculates MAP for use with a sklearn-classifier'''
     xlat = {}
     # re-combine results for each author
-    for p, a, l in zip(prediction, author_set, label_set):
-	xlat.setdefault(a, []).append((p,l))
+    for p, t, l in zip(prediction_set, train_set, label_set):
+	xlat.setdefault(t[0], []).append((p,l))
     # calculate MAP
     prec = 0
     N = 0
