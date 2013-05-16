@@ -97,6 +97,7 @@ print "creating quick access"
 def enable(fn):
     'use this as a decorator (see below)'
     fn()
+    return fn
 
 for key in db:
     # convert the train/test set for author-based lookup
@@ -110,8 +111,11 @@ for key in db:
 for author in db['Author'].values():
     if author.Train:
 	author.Train = author.Train.pop()
+	author.ConfirmedPaper = author.Train.ConfirmedPaper
+	author.DeletedPaper = author.Train.DeletedPaper
     if author.Valid:
 	author.Valid = author.Valid.pop()
+	author.CandidatePaper = author.Valid.Paper
 
 def hardwire(table, relation, foreign):
     tmp = { link[foreign] for link in table.get(relation,[]) if foreign in link }
@@ -127,32 +131,39 @@ def hardwire_union(table, relation, foreign):
 def annotate_papers():
     for paper in db['Paper'].values():
 	# hop-0
-	paper.Publish = {paper.Journal, paper.Conference} - {None}
 	paper.Author = hardwire(paper, 'PaperAuthor', 'Author')
+	paper.Publish = {paper.Journal, paper.Conference} - {None}
 	# hop-1; expensive!
 	#paper.CoPaper = hardwire_union(paper, 'Author', 'Paper')
 	# hop-1; but REALLY expensive!
 	#paper.LikePaper = hardwire_union(paper, 'Publish', 'Paper')
 
 @enable
-def annotate_authors(excluded_papers=lambda x: x.ConfirmedPaper|x.DeletedPaper|x.Valid):
+def annotate_authors(excluded_papers=lambda x: set()):
     for author in db['Author'].values():
 	# hop-0 
 	author.Paper = hardwire(author, 'PaperAuthor', 'Paper') - excluded_papers(author)
 	# hop-1
 	author.CoAuthor = hardwire_union(author, 'Paper', 'Author')
+	author.Journal  = hardwire(author, 'Paper', 'Journal')
+	author.Conference = hardwire(author, 'Paper', 'Conference')
 	author.Publish = hardwire_union(author, 'Paper', 'Publish')
 
 print "creating word counts"
 
 @enable
-def make_word_cloud():
-    F = db['WordFreq'] = {}
+def make_word_cloud(excluded_papers=lambda x: x.ConfirmedPaper|x.DeletedPaper|x.CandidatePaper, normalize=str.lower):
+    F = db['Voc'] = {}
     for paper in db['Paper'].values():
-    	paper.Voc = set(map(str.lower, paper.Title.split()))
+    	paper.Voc = set(map(normalize, paper.Title.split()))
 	for w in paper.Voc: F[w] = F.get(w,0)+1
     for author in db['Author'].values():
-    	author.Voc = hardwire_union(author, 'Paper', 'Voc')
+	admissable = author.Paper - excluded_papers(author)
+	author.Voc = { w for paper in admissable for w in paper.Voc }
+	author.PrefVoc = {}
+	for paper in admissable:
+	    for w in paper.Voc:
+		author.PrefVoc[w] = author.PrefVoc.get(w,0)+1
 
 # dump everything in the module scope; dirty but works!
 globals().update(db)
@@ -250,17 +261,31 @@ def path_len(a, b, G=default_nb):
 	open.extend([(x,D+1) for x in G(node) - closed])
     return float("inf")
 
+# a small hack to fake neighbour-sets
+class lenint (int):
+    def __len__(self): return self
+
+# a simple function which generalizes the "[]" on dictionaries
+def select(dct, vals, op=None):
+    if type(vals) == dict:
+	return { x: op(dct[x],vals[x]) for x in vals if x in dct }
+    elif type(vals) == set:
+	return { x: dct[x] for x in vals if x in dct }
+    elif type(vals) == list:
+	return [ dct[x] for x in vals ]
+    else:
+    	return dct[vals]
+
 #############################################################
 # not sure if python has this -- run multiple functions
 # on the same arguments
 #############################################################
 
 def multi(fs, *args, **kwargs):
-    return map(lambda f: f(*args, **kwargs), fs)
+    return [f(*args, **kwargs) for f in fs]
 
 def holistic(metric, a, b, Gs):
-    '''try various distance metrics'''
-    return map(lambda G: metric(a,b,G), Gs)
+    return [metric(a,b,G) for G in Gs]
 
 #############################################################
 # average precision
@@ -290,7 +315,7 @@ def map_rank(ranking):
     for author, challenge in Train.iteritems():
 	confirmed = challenge.ConfirmedPaper
 	deleted   = challenge.DeletedPaper
-	maybe     = list(confirmed + deleted)
+	maybe     = list(confirmed | deleted)
 	random.shuffle(maybe)
 	prec += avg_prec(lambda p: p in confirmed, ranking(author, maybe))
 	N += 1
