@@ -74,10 +74,10 @@ def read_csv(table, force_creation=False):
 		# we dont back-reference these #
 		del row[key]
 		newkey = key[:-3]
-		row[newkey] = links = list()
+		row[newkey] = links = set()
 		for subval in val.split():
 		    foreign = db[newkey][int(subval)]
-		    links.append(foreign)
+		    links.add(foreign)
 		    if not foreign: 
 			raise "warning foreign key:", newkey
 
@@ -123,6 +123,10 @@ for paper in db['Paper'].values():
     #paper.LikePaper = hardwire_union(paper, 'Publish', 'Paper')
 
 for author in db['Author'].values():
+    if author.Train:
+	author.Train = author.Train.pop()
+    if author.Valid:
+	author.Valid = author.Valid.pop()
     # hop-0 
     author.Paper = hardwire(author, 'PaperAuthor', 'Paper')
     # hop-1
@@ -132,13 +136,13 @@ for author in db['Author'].values():
 def make_word_cloud():
     F = db['WordFreq'] = {}
     for paper in db['Paper'].values():
-    	paper.Voc = set(paper.Title.split())
+    	paper.Voc = set(map(str.lower, paper.Title.split()))
 	for w in paper.Voc: F[w] = F.get(w,0)+1
     for author in db['Author'].values():
     	author.Voc = hardwire_union(author, 'Paper', 'Voc')
 
 print "creating word counts"
-make_word_cloud()
+#make_word_cloud()
 
 # dump everything in the module scope; dirty but works!
 globals().update(db)
@@ -276,7 +280,7 @@ def map_rank(ranking):
     for author, challenge in Train.iteritems():
 	confirmed = challenge.ConfirmedPaper
 	deleted   = challenge.DeletedPaper
-	maybe     = confirmed + deleted
+	maybe     = list(confirmed + deleted)
 	random.shuffle(maybe)
 	prec += avg_prec(lambda p: p in confirmed, ranking(author, maybe))
 	N += 1
