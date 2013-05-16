@@ -220,16 +220,18 @@ def holistic(metric, a, b, Gs):
 # average precision
 #############################################################
 
-def avg_prec(actual, ranked):
-    'actual: all positive samples; ranked: ranking produced'
-    if not actual: return 1.0
+def avg_prec(decide, ranked):
+    'decide: is sample positive? ranked: ranking produced'
     acc = 0
     TP = 0
     for P, paper in enumerate(ranked,1):
-	if paper in actual:
+	if decide(paper):
 	    TP  += 1
 	    acc += TP/float(P)
-    return acc / TP
+    try:
+	return acc / TP
+    except ZeroDivisionError:
+	return 1.0
 
 #############################################################
 # create ranking using a rank/score function
@@ -244,7 +246,7 @@ def map_rank(ranking):
 	deleted   = challenge.DeletedPaper
 	maybe     = confirmed + deleted
 	random.shuffle(maybe)
-	prec += avg_prec(confirmed, ranking(author, maybe))
+	prec += avg_prec(lambda p: p in confirmed, ranking(author, maybe))
 	N += 1
     return prec/float(N)
 
@@ -259,25 +261,35 @@ def map_score(score):
 #############################################################
 
 def train_data():
-    '''returns (unpreprocessed) train_set, label_set
+    '''returns (unpreprocessed) author_set, paper_set, label_set
     where train_set is a list of of (author, paper) tuples
     '''
     A = []
     for author, challenge in Train.iteritems():
 	confirmed = challenge.ConfirmedPaper
 	deleted   = challenge.DeletedPaper
-	A.extend([((author, paper),True)  for paper in confirmed])
-	A.extend([((author, paper),False) for paper in deleted])
+	A.extend([(author,paper,True)  for paper in confirmed])
+	A.extend([(author,paper,False) for paper in deleted])
     return zip(*A)
 
 def test_data():
     '''returns (unpreprocessed) test_set'''
     return [(author, paper) for author,x in Valid.iteritems() for paper in x]
 
-def MAP(prediction, train_set, label_set):
+def MAP(prediction, author_set, label_set):
     '''calculates MAP for use with a sklearn-classifier'''
-    #todo
-    pass
+    xlat = {}
+    # re-combine results for each author
+    for p, a, l in zip(prediction, author_set, label_set):
+	xlat.setdefault(a, []).append((p,l))
+    # calculate MAP
+    prec = 0
+    N = 0
+    for _, predict in xlat:
+	rank = sorted(predict, key=lambda x:x[0], reverse=True)
+	prec += avg_prec(lambda x:x[1], rank)
+	N += 1
+    return prec/float(N)
 
 #############################################################
 # 
