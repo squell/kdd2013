@@ -140,6 +140,14 @@ print "done"
 def relate(table1, table2=None):
     return lambda rec: rec[table1] if table1 in rec else rec[table2]
 
+# similar to the above, but multiple args 
+def relates(*options):
+    def nb(rec):
+	for table in options:
+	    if table in rec: return rec[table]
+	raise Exception("dead-end encountered!", rec)
+    return nb
+
 default_nb = relate('Paper', 'Author')
 
 def nb_nb(G1, G2):
@@ -169,11 +177,24 @@ def harmonic(nums):
 def combined(metric, a, bs, G=default_nb, aggregate=average):
     return aggregate([ metric(a,b,G) for b in bs ])
 
+def combined2(metric, xs, bs, G=default_nb, aggregate=average):
+    return aggregate([ metric(a,b,G) for a in xs for b in bs ])
+
 def lifted(metric, a, bs, G=default_nb):
     big_b = set.union(*[G(b) for b in bs])
     def Gmod(obj):
 	return G(obj) if obj is not big_b else big_b
     return metric(a, big_b, Gmod)
+
+def lifted2(metric, xs, bs, G=default_nb):
+    big_a = set.union(*[G(a) for a in xs])
+    big_b = set.union(*[G(b) for b in bs])
+    def Gmod(obj):
+	if obj is not big_a and obj is not big_b:
+	    return G(obj)
+	else:
+	    return obj
+    return metric(big_a, big_b, Gmod)
 
 #############################################################
 # metrics defined using a neighbor function
@@ -290,8 +311,4 @@ def MAP(prediction, author_set, label_set):
 	prec += avg_prec(lambda x:x[1], rank)
 	N += 1
     return prec/float(N)
-
-#############################################################
-# 
-#############################################################
 
