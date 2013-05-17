@@ -34,7 +34,7 @@ db = dict()
 
 limit = int(sys.argv[1]) if len(sys.argv) > 1 else -1
 
-def read_csv(table, force_creation=False):
+def read_csv(table, force_creation=False, missing=None):
     global limit
     print "reading", table
     dataset = []
@@ -67,7 +67,7 @@ def read_csv(table, force_creation=False):
 		    row[newkey] = foreign = None
 		if not foreign: 
 		    #print "null foreign key:", table, newkey, val
-		    pass
+		    row[newkey] = missing and missing()
 		else:
 		    foreign.setdefault(table, set()).add(obj)
 	    elif key[-3:] == "Ids":
@@ -119,12 +119,12 @@ for author in db['Author'].values():
 
 def hardwire(table, relation, foreign):
     tmp = { link[foreign] for link in table.get(relation,[]) if foreign in link }
-    tmp -= {None,table}
+    tmp -= {None}
     return tmp
 
 def hardwire_union(table, relation, foreign):
     tmp = { item for link in table.get(relation,[]) for item in link.get(foreign,[]) if item }
-    tmp -= {None,table}
+    tmp -= {None}
     return tmp
 
 @enable
