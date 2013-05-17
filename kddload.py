@@ -67,8 +67,8 @@ def read_csv(table, force_creation=False, missing=None):
 		    row[newkey] = foreign = None
 		if not foreign: 
 		    #print "null foreign key:", table, newkey, val
-		    row[newkey] = missing and missing()
-		else:
+		    row[newkey] = foreign = missing and missing()
+		if foreign:
 		    foreign.setdefault(table, set()).add(obj)
 	    elif key[-3:] == "Ids":
 		# we dont back-reference these #
