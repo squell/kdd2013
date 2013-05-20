@@ -40,6 +40,13 @@ def read_csv(table, force_creation=False, missing=None):
     dataset = []
     db[table] = dataset
 
+    def identify(idx, obj):
+	#grow dataset if necessary
+	while idx >= len(dataset):
+	    dataset.extend([None]*(idx+1-len(dataset)))
+	dataset[idx] = obj
+	return obj
+
     for row in csv.DictReader(open(table+".csv", 'rb')):
 	if limit == 0: break
 	limit -= 1
@@ -48,10 +55,7 @@ def read_csv(table, force_creation=False, missing=None):
 	# add identifiable items
 	if 'Id' in row:
 	    row['Id'] = idx = int(row['Id'])
-	    #grow dataset if necessary
-	    while idx >= len(dataset):
-		dataset.extend([None]*(idx+1-len(dataset)))
-	    dataset[idx] = obj
+	    identify(idx, obj)
 	elif force_creation:
 	    dataset.append(obj)
 
@@ -68,6 +72,7 @@ def read_csv(table, force_creation=False, missing=None):
 		if not foreign: 
 		    #print "null foreign key:", table, newkey, val
 		    row[newkey] = foreign = missing and missing()
+		    identify(int(val), foreign)
 		if foreign:
 		    foreign.setdefault(table, set()).add(obj)
 	    elif key[-3:] == "Ids":
