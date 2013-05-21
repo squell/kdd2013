@@ -272,11 +272,11 @@ class lenint (int):
 
 # a simple function which generalizes the "[]" on dictionaries
 def select(dct, vals, op=None):
-    if type(vals) == dict:
+    if type(vals) is dict:
 	return { x: op(dct[x],vals[x]) for x in vals if x in dct }
-    elif type(vals) == set:
+    elif type(vals) is set:
 	return { x: dct[x] for x in vals if x in dct }
-    elif type(vals) == list:
+    elif type(vals) is list:
 	return [ dct[x] for x in vals ]
     else:
     	return dct[vals]
@@ -370,7 +370,11 @@ def extract_features(method, rawset):
 	return [multi(method, *item) for item in rawset]
 
 def MAP(train_set, label_set, prediction_set):
-    '''calculates MAP for use with a sklearn-classifier'''
+    '''calculates MAP for use with a sklearn-classifier
+    first argument: raw-train data or a list of tuples of authorid,paperid
+    second: list of correct labels
+    third: predictions
+    '''
     xlat = {}
     # re-combine results for each author
     for p, t, l in zip(prediction_set, train_set, label_set):
