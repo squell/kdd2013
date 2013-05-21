@@ -90,7 +90,7 @@ read_csv("Conference")
 read_csv("Journal")
 read_csv("Author")
 read_csv("Paper")
-#read_csv("PaperAuthor")
+read_csv("PaperAuthor")
 
 db['DeletedPaper'] = db['Paper']
 db['ConfirmedPaper'] = db['Paper']
