@@ -90,7 +90,7 @@ read_csv("Conference")
 read_csv("Journal")
 read_csv("Author")
 read_csv("Paper")
-read_csv("PaperAuthor")
+#read_csv("PaperAuthor")
 
 db['DeletedPaper'] = db['Paper']
 db['ConfirmedPaper'] = db['Paper']
@@ -349,6 +349,7 @@ def train_data(feature=None):
 	deleted   = challenge.DeletedPaper
 	A.extend([((author,paper),True)  for paper in confirmed])
 	A.extend([((author,paper),False) for paper in deleted])
+    random.shuffle(A)
     if feature:
 	raw, label = zip(*A)
 	return raw, [multi(feature,a,p) for a,p in raw], label
@@ -357,10 +358,11 @@ def train_data(feature=None):
 
 def test_data(feature=None):
     '''similar to train_data, but returns test_set'''
+    A = [(row.Author, p) for row in Valid.itervalues() for p in row.Paper]
+    random.shuffle(A)
     if feature:
-	return [multi(feature, author, paper) for author,x in Valid.iteritems() for paper in x]
-    else:
-	return [(author, paper) for author,x in Valid.iteritems() for paper in x]
+	A = map(lambda item: multi(feature, *item), A)
+    return A
 
 def extract_features(method, rawset):
     '''you could implement this yourself'''
@@ -369,22 +371,49 @@ def extract_features(method, rawset):
     else:
 	return [multi(method, *item) for item in rawset]
 
-def MAP(train_set, label_set, prediction_set):
+def group_by_author(train_set, labels, predictions):
+    '''groups the results by author; use answers or papers as labels
+    input:
+	list of tuples (having as first item an author/authorid)
+	list of labels
+	list of predicted values
+    returns: dictionary of author/authorid -> list of (label,score)
+    '''
+    xlat = {}
+    # re-combine results for each author
+    for train, label, score in zip(train_set, labels, predictions):
+	xlat.setdefault(train[0], []).append((label,score))
+    return xlat
+
+def MAP(train_set, labels, predictions):
     '''calculates MAP for use with a sklearn-classifier
     first argument: raw-train data or a list of tuples of authorid,paperid
     second: list of correct labels
     third: predictions
     '''
-    xlat = {}
-    # re-combine results for each author
-    for p, t, l in zip(prediction_set, train_set, label_set):
-	xlat.setdefault(t[0], []).append((p,l))
-    # calculate MAP
+    xlat = group_by_author(train_set, labels, predictions)
     prec = 0
     N = 0
-    for _, predict in xlat.iteritems():
-	rank = sorted(predict, key=lambda x:x[0], reverse=True)
+    for _, scores in xlat.iteritems():
+	rank = sorted(scores, key=lambda x:x[0], reverse=True)
 	prec += avg_prec(lambda x:x[1], rank)
 	N += 1
     return prec/float(N)
 
+def write_csv(train_set, predictions):
+    def getId(obj):
+	return obj.Id if type(obj) is record else obj
+
+    authorIds = [(getId(a), ) for a,p in train_set]
+    paperIds  = [getId(p) for a,p in train_set]
+    table = group_by_author(authorIds, paperIds, predictions)
+
+    csv = open("output.csv", "w")
+    print >> csv, "AuthorId, PaperIds"
+    for authorId, ranking in table.iteritems():
+	ranking = sorted(ranking, key=lambda x:x[0], reverse=True)
+	print >> csv, "%d," % authorId,
+	for paperId, _ in ranking:
+	    print >> csv, paperId,
+	print >> csv
+    
