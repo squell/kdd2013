@@ -340,7 +340,7 @@ def features(*list_of_functions):
     '''Some syntactic sugar'''
     return lambda x: extract_features(list_of_functions, x)
 
-def train_data(feature=None):
+def train_data(shuffle=True):
     '''returns zip(author_set, paper_set), label_set
     where train_set is a list of of (author, paper) tuples if no argument given.
 
@@ -353,22 +353,16 @@ def train_data(feature=None):
 	deleted   = challenge.DeletedPaper
 	A.extend([((author,paper),True)  for paper in confirmed])
 	A.extend([((author,paper),False) for paper in deleted])
-    random.shuffle(A)
-    if feature:
-	raw, label = zip(*A)
-	return raw, [multi(feature,a,p) for a,p in raw], label
-    else:
-	return zip(*A)
+    if shuffle: random.shuffle(A)
+    return zip(*A)
 
-def test_data(feature=None):
+def test_data(shuffle=True):
     '''similar to train_data
     returns zip(authorset, paperset) or
     returns zip(authorset, paperset), proccessed  if argument is given
     '''
     A = [(row.Author, p) for row in Valid.itervalues() for p in row.Paper]
-    random.shuffle(A)
-    if feature:
-	A = A, map(lambda item: multi(feature, *item), A)
+    if shuffle: random.shuffle(A)
     return A
 
 def extract_features(method, rawset):
