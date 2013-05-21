@@ -10,11 +10,13 @@ from sklearn import svm, tree, qda, metrics, cross_validation, grid_search, data
 
 classifier = ensemble.RandomForestClassifier(
 		  verbose=10
-		, oob_score=True
-		, n_estimators=10#50
+		#, oob_score=True
+		, n_estimators=50
 		, n_jobs=4
-		, criterion='entropy'
-		, compute_importances=False
+		#, criterion='entropy'
+		#, compute_importances=False
+		, random_state=1 #
+		, min_samples_split=10
 		)
 
 from scrabble import Scrabble
@@ -39,6 +41,10 @@ raw_data, train_data, labels = train_data(feature_set)
 classifier.fit(train_data, labels)
 
 predictions = classifier.predict_proba(train_data)[:,1]
-
 print MAP(raw_data, labels, predictions)
+
+test_data = test_data(feature_set)
+predictions = classifier.predict_proba(test_data)[:,1]
+
+write_csv(raw_data, test_data)
 
