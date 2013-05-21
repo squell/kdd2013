@@ -336,6 +336,14 @@ def map_score(score):
 # get input for a normal clsssifier
 #############################################################
 
+def features(list_of_functions):
+    '''
+    Decorator. Write @features followed on the next line by a list definition,
+    and get a function of that name which produces all those features, given
+    and author, paper as an argument.
+    '''
+    return lambda a,p: multi(list_of_functions, a, p)
+
 def train_data(feature=None):
     '''returns zip(author_set, paper_set), label_set
     where train_set is a list of of (author, paper) tuples if no argument given.
@@ -357,11 +365,14 @@ def train_data(feature=None):
 	return zip(*A)
 
 def test_data(feature=None):
-    '''similar to train_data, but returns test_set'''
+    '''similar to train_data
+    returns zip(authorset, paperset) or
+    returns zip(authorset, paperset), proccessed  if argument is given
+    '''
     A = [(row.Author, p) for row in Valid.itervalues() for p in row.Paper]
     random.shuffle(A)
     if feature:
-	A = map(lambda item: multi(feature, *item), A)
+	A = A, map(lambda item: multi(feature, *item), A)
     return A
 
 def extract_features(method, rawset):
