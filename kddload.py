@@ -418,7 +418,7 @@ def write_csv(train_set, predictions):
     csv = open("output.csv", "w")
     print >> csv, "AuthorId, PaperIds"
     for authorId, ranking in table.iteritems():
-	ranking = sorted(ranking, key=lambda x:x[0], reverse=True)
+	ranking = sorted(ranking, key=lambda x:x[1], reverse=True)
 	print >> csv, "%d," % authorId,
 	for paperId, _ in ranking:
 	    print >> csv, paperId,
