@@ -336,13 +336,9 @@ def map_score(score):
 # get input for a normal clsssifier
 #############################################################
 
-def features(list_of_functions):
-    '''
-    Decorator. Write @features followed on the next line by a list definition,
-    and get a function of that name which produces all those features, given
-    and author, paper as an argument.
-    '''
-    return lambda a,p: multi(list_of_functions, a, p)
+def features(*list_of_functions):
+    '''Some syntactic sugar'''
+    return lambda x: extract_features(list_of_functions, x)
 
 def train_data(feature=None):
     '''returns zip(author_set, paper_set), label_set
