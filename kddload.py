@@ -396,8 +396,8 @@ def MAP(train_set, labels, predictions):
     prec = 0
     N = 0
     for _, scores in xlat.iteritems():
-	rank = sorted(scores, key=lambda x:x[0], reverse=True)
-	prec += avg_prec(lambda x:x[1], rank)
+	rank = sorted(scores, key=lambda x:x[1], reverse=True)
+	prec += avg_prec(lambda x:x[0], rank)
 	N += 1
     return prec/float(N)
 
