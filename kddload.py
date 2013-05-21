@@ -40,7 +40,7 @@ def read_csv(table, force_creation=False, missing=None):
     dataset = []
     db[table] = dataset
 
-    def identify(idx, obj):
+    def identify(dataset, idx, obj):
 	#grow dataset if necessary
 	while idx >= len(dataset):
 	    dataset.extend([None]*(idx+1-len(dataset)))
@@ -55,7 +55,7 @@ def read_csv(table, force_creation=False, missing=None):
 	# add identifiable items
 	if 'Id' in row:
 	    row['Id'] = idx = int(row['Id'])
-	    identify(idx, obj)
+	    identify(dataset, idx, obj)
 	elif force_creation:
 	    dataset.append(obj)
 
@@ -72,7 +72,7 @@ def read_csv(table, force_creation=False, missing=None):
 		if not foreign: 
 		    #print "null foreign key:", table, newkey, val
 		    row[newkey] = foreign = missing and missing()
-		    identify(int(val), foreign)
+		    identify(db[newkey], int(val), foreign)
 		if foreign:
 		    foreign.setdefault(table, set()).add(obj)
 	    elif key[-3:] == "Ids":
@@ -336,9 +336,12 @@ def map_score(score):
 # get input for a normal clsssifier
 #############################################################
 
-def train_data():
-    '''returns (unpreprocessed) zip(author_set, paper_set), label_set
-    where train_set is a list of of (author, paper) tuples
+def train_data(feature=None):
+    '''returns zip(author_set, paper_set), label_set
+    where train_set is a list of of (author, paper) tuples if no argument given.
+
+    return zip(authorset, paper_set), processed, labelset
+    if an argument is given, where trainset is obtained by applying argument
     '''
     A = []
     for author, challenge in Train.iteritems():
@@ -346,13 +349,27 @@ def train_data():
 	deleted   = challenge.DeletedPaper
 	A.extend([((author,paper),True)  for paper in confirmed])
 	A.extend([((author,paper),False) for paper in deleted])
-    return zip(*A)
+    if feature:
+	raw, label = zip(*A)
+	return raw, [multi(feature,a,p) for a,p in raw], label
+    else:
+	return zip(*A)
 
-def test_data():
-    '''returns (unpreprocessed) test_set'''
-    return [(author, paper) for author,x in Valid.iteritems() for paper in x]
+def test_data(feature=None):
+    '''similar to train_data, but returns test_set'''
+    if feature:
+	return [multi(feature, author, paper) for author,x in Valid.iteritems() for paper in x]
+    else:
+	return [(author, paper) for author,x in Valid.iteritems() for paper in x]
 
-def MAP(prediction_set, train_set, label_set):
+def extract_features(method, rawset):
+    '''you could implement this yourself'''
+    if callable(method):
+	return [(method(*item),) for item in rawset]
+    else:
+	return [multi(method, *item) for item in rawset]
+
+def MAP(train_set, label_set, prediction_set):
     '''calculates MAP for use with a sklearn-classifier'''
     xlat = {}
     # re-combine results for each author
@@ -361,7 +378,7 @@ def MAP(prediction_set, train_set, label_set):
     # calculate MAP
     prec = 0
     N = 0
-    for _, predict in xlat:
+    for _, predict in xlat.iteritems():
 	rank = sorted(predict, key=lambda x:x[0], reverse=True)
 	prec += avg_prec(lambda x:x[1], rank)
 	N += 1
