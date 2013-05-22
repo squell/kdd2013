@@ -1,5 +1,3 @@
-#! /usr/bin/python -O -i
-
 '''
  a demo on using kddload to get features
 '''

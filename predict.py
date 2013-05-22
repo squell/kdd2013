@@ -1,5 +1,3 @@
-#! /usr/bin/python -O -i
-
 '''
   train a classifier and create predictions
 '''

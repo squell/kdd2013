@@ -1,5 +1,3 @@
-#! /usr/bin/python -O -i
-
 '''
   demo of cross validation
 '''
