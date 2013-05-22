@@ -137,7 +137,7 @@ def hardwire_union(table, relation, foreign):
 @enable
 def annotate_papers():
     'joining Paper->Author'
-    for paper in db['Paper'].values():
+    for paper in db['Paper'].itervalues():
 	# hop-0
 	paper.Author = hardwire(paper, 'PaperAuthor', 'Author')
 	# hop-1; expensive!
@@ -148,7 +148,7 @@ def annotate_papers():
 # we may not have to scan /all/ authors, just the ones in the trainset.
 @enable
 def annotate_authors(restrict=False, excluded_papers=lambda x: set()):
-    'joining author->Paper->{CoAuthor,Journal,Conference}'
+    'joining Author->Paper->{CoAuthor,Journal,Conference}'
     if restrict:
 	selection = db['Train'].keys()+db['Valid'].keys()
     else:
@@ -160,6 +160,14 @@ def annotate_authors(restrict=False, excluded_papers=lambda x: set()):
 	author.CoAuthor = hardwire_union(author, 'Paper', 'Author')
 	author.Journal  = hardwire(author, 'Paper', 'Journal')
 	author.Conference = hardwire(author, 'Paper', 'Conference')
+
+@enable
+def annotate_journals():
+    'joining {Journal,Conference}->Author'
+    for pub in db['Journal'].itervalues():
+	pub.Author = hardwire_union(pub, 'Paper', 'Author')
+    for pub in db['Conference'].itervalues():
+	pub.Author = hardwire_union(pub, 'Paper', 'Author')
 
 @enable
 def make_word_cloud(restrict=False, excluded_papers=lambda x: x.ConfirmedPaper|x.DeletedPaper|x.CandidatePaper, normalize=str.lower):
@@ -191,11 +199,11 @@ print "done"
 # neighbour definitions
 #############################################################
 
-# similar to the above, but multiple args 
 def relate(*options):
     def nb(rec):
 	for table in options:
 	    if table in rec: return rec[table]
+	#return set()
 	raise Exception("dead-end encountered!", rec)
     return nb
 
