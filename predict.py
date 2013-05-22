@@ -10,7 +10,7 @@ import sklearn
 from sklearn import svm, tree, qda, metrics, cross_validation, grid_search, datasets, ensemble, linear_model, naive_bayes
 import kddutil
 
-if len(sys.argv) < 1:
+if len(sys.argv) <= 1:
     print "so what pkl do you want me to read, hm?"
     sys.exit()
 
@@ -31,10 +31,13 @@ with open(sys.argv[1]) as infile:
 train_ids, train_set, labels = train
 test_ids, test_set = test
 
+train_set = kddutil.bound(train_set, max=100000)
+test_set  = kddutil.bound(test_set, max=100000)
+
 classifier.fit(train_set, labels)
 
 predictions = classifier.predict_proba(test_set)[:,1]
 
 print "writing to output.csv"
-kddutil.write_csv(ids, predictions)
+kddutil.write_csv(test_ids, predictions)
 

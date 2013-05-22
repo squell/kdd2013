@@ -10,7 +10,7 @@ import sys
 import sklearn
 from sklearn import svm, tree, qda, metrics, cross_validation, grid_search, datasets, ensemble, linear_model, naive_bayes
 
-if len(sys.argv) < 1:
+if len(sys.argv) <= 1:
     print "so what pkl do you want me to read, hm?"
     sys.exit()
 
@@ -29,6 +29,8 @@ with open(sys.argv[1]) as infile:
     train, _ = pickle.load(infile)
 
 ids, info, labels = train
+
+info = kddutil.bound(info, max=10000)
 
 print kddutil.evaluate(classifier, ids, info, labels)
 

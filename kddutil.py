@@ -2,6 +2,8 @@
     some functions which are useful even without the kdd-database loaded in memory
 '''
 
+import random
+
 #############################################################
 # a less useful dictionary
 #############################################################
@@ -120,6 +122,20 @@ def merge_features(set1, set2):
     return zip(*[[key]+row for key, row in table.iteritems()])
 
 #############################################################
+# make sure all data points are within certain boundaries
+#############################################################
+
+def bound(data, min=-float('inf'), max=+float('inf')):
+    if type(data) is list:
+	return [bound(elem, min, max) for elem in data]
+    elif data < min:
+	return min
+    elif data > max:
+	return max
+    else:
+	return data
+
+#############################################################
 # splitting already processed data into train/validation sets
 # this just uses the hold-out method; CV is overrated :-)
 #############################################################
@@ -128,7 +144,7 @@ def xval_split(ids, labels, features, ratio=0.2):
     table = group_by_author(ids, features, labels)
     authors = table.keys()
     random.shuffle(authors)
-    N = int(q*len(authors))
+    N = int(ratio*len(authors))
     train = zip(*[tuple for a in authors[N:] for tuple in table[a]])
     valid = zip(*[tuple for a in authors[:N] for tuple in table[a]])
     return train, valid
@@ -138,7 +154,7 @@ def xval_split(ids, labels, features, ratio=0.2):
 #############################################################
 
 def evaluate(classifier, ids, features, labels):
-    train, (test,label) = xsplit(rawids, labels, features, q)
+    train, (test,label) = xval_split(ids, labels, features)
     classifier.fit(*train)
     return MAP(ids, label, classifier.predict_proba(test)[:,1])
 

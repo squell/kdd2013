@@ -8,7 +8,7 @@ from kddload import *          # this will take awhile
 import cPickle as pickle
 import sys
 
-if len(sys.argv) < 1:
+if len(sys.argv) <= 1:
     print "must supply a pickle name"
     sys.exit()
 
