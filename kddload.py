@@ -2,33 +2,12 @@ import sys
 import csv
 import math
 import random
+from kddutil import *
 
-class record (object):
-    ''' a simple "coat hanger"
-
-    using a regular dictionary is annoying
-    - you dont want to see its representation all the time
-    - not hashable 
-    - it is nicer to type x.blaabla.werewr than x['blabla']['werewr'] 
-    '''
-    def __init__(self, d=None):
-	self.__dict__ = d or {}
-    def setdefault(self, name, val):
-	return self.__dict__.setdefault(name, val)
-    def get(self, name, val):
-	return self.__dict__.get(name, val)
-    def keys(self):
-	return self.__dict__.keys()
-    def values(self):
-	return self.__dict__.values()
-    def items(self):
-	return self.__dict__.items()
-    def __getitem__(self, name):
-	return self.__dict__[name]
-    def __contains__(self, name):
-    	return name in self.__dict__
-    def __getattr__(self, name):
-	return self.__dict__.get(name, set())
+#############################################################
+# read in a huge amount of data; create forward and backward
+# links contained in the .csv on the fly as direct ref's
+#############################################################
 
 db = dict()
 
@@ -97,6 +76,10 @@ db['DeletedPaper'] = db['Paper']
 db['ConfirmedPaper'] = db['Paper']
 read_csv("Train", True)
 read_csv("Valid", True)
+
+#############################################################
+# make the data-format nicer to use
+#############################################################
 
 print "creating quick access"
 
@@ -209,6 +192,7 @@ def relate(*options):
 
 default_nb = relate('Paper', 'Author')
 
+# compute multiple joins -- better to precompute this!!
 def nb_nb(G1, G2):
     return lambda rec: set.union(*(G2(z) for z in G1(rec)))
 
@@ -311,23 +295,6 @@ def holistic(metric, a, b, Gs):
     return [metric(a,b,G) for G in Gs]
 
 #############################################################
-# average precision
-#############################################################
-
-def avg_prec(decide, ranked):
-    'decide: is sample positive? ranked: ranking produced'
-    acc = 0
-    TP = 0
-    for P, paper in enumerate(ranked,1):
-	if decide(paper):
-	    TP  += 1
-	    acc += TP/float(P)
-    try:
-	return acc / TP
-    except ZeroDivisionError:
-	return 1.0
-
-#############################################################
 # create ranking using a rank/score function
 #############################################################
 
@@ -394,49 +361,3 @@ def extract_features(method, rawset):
     else:
 	return [multi(method, *item) for item in rawset]
 
-def group_by_author(train_set, labels, predictions):
-    '''groups the results by author; use answers or papers as labels
-    input:
-	list of tuples (having as first item an author/authorid)
-	list of labels
-	list of predicted values
-    returns: dictionary of author/authorid -> list of (label,score)
-    '''
-    xlat = {}
-    # re-combine results for each author
-    for train, label, score in zip(train_set, labels, predictions):
-	xlat.setdefault(train[0], []).append((label,score))
-    return xlat
-
-def MAP(train_set, labels, predictions):
-    '''calculates MAP for use with a sklearn-classifier
-    first argument: raw-train data or a list of tuples of authorid,paperid
-    second: list of correct labels
-    third: predictions
-    '''
-    xlat = group_by_author(train_set, labels, predictions)
-    prec = 0
-    N = 0
-    for _, scores in xlat.iteritems():
-	rank = sorted(scores, key=lambda x:x[1], reverse=True)
-	prec += avg_prec(lambda x:x[0], rank)
-	N += 1
-    return prec/float(N)
-
-def write_csv(train_set, predictions):
-    def getId(obj):
-	return obj.Id if type(obj) is record else obj
-
-    authorIds = [(getId(a), ) for a,p in train_set]
-    paperIds  = [getId(p) for a,p in train_set]
-    table = group_by_author(authorIds, paperIds, predictions)
-
-    csv = open("output.csv", "w")
-    print >> csv, "AuthorId, PaperIds"
-    for authorId, ranking in table.iteritems():
-	ranking = sorted(ranking, key=lambda x:x[1], reverse=True)
-	print >> csv, "%d," % authorId,
-	for paperId, _ in ranking:
-	    print >> csv, paperId,
-	print >> csv
-    
