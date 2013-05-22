@@ -101,6 +101,25 @@ def write_csv(train_set, predictions):
 	print >> csv
     
 #############################################################
+# combining two sets of features 
+# - this saves recomputation
+#############################################################
+
+def merge_features(set1, set2):
+    '''merge_features(set1, set2), where set1 and set2 be tuples of the form
+    (ids, features) or (ids, features, labels) and contain
+    exactly the same ids (but perhaps in a different order)
+    '''
+    set1 = zip(*set1)
+    set2 = zip(*set2)
+    table = {}
+    for row in set1:
+	table[row[0]] = list(row[1:])
+    for row in set2:
+	table[row[0]].append(row[1:])
+    return zip(*[[key]+row for key, row in table.iteritems()])
+
+#############################################################
 # splitting already processed data into train/validation sets
 # this just uses the hold-out method; CV is overrated :-)
 #############################################################
