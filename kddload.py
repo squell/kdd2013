@@ -259,14 +259,18 @@ def preferential(a, b, G=default_nb):
     return len(G(a))*len(G(b))
 
 # this is slow; obviously
-def path_len(a, b, G=default_nb):
-    open   = [(a,0)]
-    closed = set()
-    for node, D in open:
-	if node is b: return D
-	closed.add(node)
-	open.extend([(x,D+1) for x in G(node) - closed])
-    return float("inf")
+def path_hit(a, bs, G=default_nb, max=6):
+    if type(bs) is not set: bs = {bs}
+    D = 0
+    open   = [(a,D)]
+    closed = {a}
+    while open and D <= max:
+	node, D = open.pop(0)
+        if node in bs: return D
+	new = G(node) - closed
+        closed |= new
+        open.extend([(x,D+1) for x in new])
+    return max+1
 
 # a small hack to fake neighbour-sets
 class lenint (int):
