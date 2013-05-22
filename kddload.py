@@ -11,8 +11,8 @@ class record (object):
     - not hashable 
     - it is nicer to type x.blaabla.werewr than x['blabla']['werewr'] 
     '''
-    def __init__(self, d={}):
-	self.__dict__ = d
+    def __init__(self, d=None):
+	self.__dict__ = d or {}
     def setdefault(self, name, val):
 	return self.__dict__.setdefault(name, val)
     def get(self, name, val):
@@ -72,7 +72,8 @@ def read_csv(table, force_creation=False, missing=None):
 		if not foreign: 
 		    #print "null foreign key:", table, newkey, val
 		    row[newkey] = foreign = missing and missing()
-		    identify(db[newkey], int(val), foreign)
+		    foreign.Id = int(val)
+		    identify(db[newkey], foreign.Id, foreign)
 		if foreign:
 		    foreign.setdefault(table, set()).add(obj)
 	    elif key[-3:] == "Ids":
@@ -89,8 +90,8 @@ def read_csv(table, force_creation=False, missing=None):
 read_csv("Conference")
 read_csv("Journal")
 read_csv("Author")
-read_csv("Paper")
-read_csv("PaperAuthor")
+read_csv("Paper",missing=record)
+read_csv("PaperAuthor",missing=record)
 
 db['DeletedPaper'] = db['Paper']
 db['ConfirmedPaper'] = db['Paper']
@@ -101,6 +102,7 @@ print "creating quick access"
 
 def enable(fn):
     'use this as a decorator (see below)'
+    print fn.__doc__
     fn()
     return fn
 
@@ -134,35 +136,46 @@ def hardwire_union(table, relation, foreign):
 
 @enable
 def annotate_papers():
+    'joining Paper->Author'
     for paper in db['Paper'].values():
 	# hop-0
 	paper.Author = hardwire(paper, 'PaperAuthor', 'Author')
-	paper.Publish = {paper.Journal, paper.Conference} - {None}
 	# hop-1; expensive!
 	#paper.CoPaper = hardwire_union(paper, 'Author', 'Paper')
 	# hop-1; but REALLY expensive!
-	#paper.LikePaper = hardwire_union(paper, 'Publish', 'Paper')
+	#paper.LikePaper = hardwire_union(paper, 'xxx', 'Paper')
 
+# we may not have to scan /all/ authors, just the ones in the trainset.
 @enable
-def annotate_authors(excluded_papers=lambda x: set()):
-    for author in db['Author'].values():
+def annotate_authors(restrict=False, excluded_papers=lambda x: set()):
+    'joining author->Paper->{CoAuthor,Journal,Conference}'
+    if restrict:
+	selection = db['Train'].keys()+db['Valid'].keys()
+    else:
+	selection = db['Author'].itervalues()
+    for author in selection:
 	# hop-0 
 	author.Paper = hardwire(author, 'PaperAuthor', 'Paper') - excluded_papers(author)
 	# hop-1
 	author.CoAuthor = hardwire_union(author, 'Paper', 'Author')
 	author.Journal  = hardwire(author, 'Paper', 'Journal')
 	author.Conference = hardwire(author, 'Paper', 'Conference')
-	author.Publish = hardwire_union(author, 'Paper', 'Publish')
-
-print "creating word counts"
 
 @enable
-def make_word_cloud(excluded_papers=lambda x: x.ConfirmedPaper|x.DeletedPaper|x.CandidatePaper, normalize=str.lower):
+def make_word_cloud(restrict=False, excluded_papers=lambda x: x.ConfirmedPaper|x.DeletedPaper|x.CandidatePaper, normalize=str.lower):
+    'creating word counts'
+    if restrict:
+	selection = db['Train'].keys()+db['Valid'].keys()
+    else:
+	selection = db['Author'].itervalues()
+
     F = db['Voc'] = {}
-    for paper in db['Paper'].values():
-    	paper.Voc = set(map(normalize, paper.Title.split()))
+    for paper in db['Paper'].itervalues():
+	if paper.Title:
+	    paper.Voc = set(map(normalize, paper.Title.split()))
 	for w in paper.Voc: F[w] = F.get(w,0)+1
-    for author in db['Author'].values():
+
+    for author in selection:
 	admissable = author.Paper - excluded_papers(author)
 	author.Voc = { w for paper in admissable for w in paper.Voc }
 	author.PrefVoc = {}
@@ -178,11 +191,8 @@ print "done"
 # neighbour definitions
 #############################################################
 
-def relate(table1, table2=None):
-    return lambda rec: rec[table1] if table1 in rec else rec[table2]
-
 # similar to the above, but multiple args 
-def relates(*options):
+def relate(*options):
     def nb(rec):
 	for table in options:
 	    if table in rec: return rec[table]
@@ -340,21 +350,25 @@ def features(*list_of_functions):
     '''Some syntactic sugar'''
     return lambda x: extract_features(list_of_functions, x)
 
-def train_data(shuffle=True):
-    '''returns zip(author_set, paper_set), label_set
-    where train_set is a list of of (author, paper) tuples if no argument given.
-
-    return zip(authorset, paper_set), processed, labelset
-    if an argument is given, where trainset is obtained by applying argument
-    '''
+def train_data(shuffle=True, selection=None):
+    '''returns zip(author_set, paper_set), label_set '''
     A = []
-    for author, challenge in Train.iteritems():
-	confirmed = challenge.ConfirmedPaper
-	deleted   = challenge.DeletedPaper
-	A.extend([((author,paper),True)  for paper in confirmed])
-	A.extend([((author,paper),False) for paper in deleted])
-    if shuffle: random.shuffle(A)
+    for author, challenge in (selection or Train.iteritems()):
+	confirmed = [((author,p),True)  for p in challenge.ConfirmedPaper]
+	deleted   = [((author,p),False) for p in challenge.DeletedPaper]
+	entries = confirmed+deleted
+	if shuffle: random.shuffle(entries)
+	A.extend(entries)
     return zip(*A)
+
+def xvalidation_data(split=0.2, shuffle=True):
+    '''returns trainset, trainlabels, validset, validlabels'''
+    authors = Train.keys()
+    random.shuffle(authors)
+    N = int(len(authors)*split)
+    train, trainlabel = train_data(shuffle, selection=authors[N:])
+    test , testlabel  = train_data(shuffle, selection=authors[:N])
+    return train, trainlabel, test, testlabel
 
 def test_data(shuffle=True):
     '''similar to train_data
