@@ -20,31 +20,59 @@ classifier = ensemble.RandomForestClassifier(
 		)
 
 from scrabble import Scrabble
+from kddload import *          # this will take awhile
 
-feature_set = [
+feature_set = features(
 	  lambda a,p: len(p.Journal.Paper & a.Paper) if p.Journal else 0
 	, lambda a,p: len(p.Conference.Paper & a.Paper) if p.Conference else 0
 	, lambda a,p: len(p.Conference.Paper & a.Paper) if p.Conference else 0
+
 	, lambda a,p: len(a.Paper)
 	, lambda a,p: len(p.Author)
-	, lambda a,p: lifted(common_neighbours, a, p.Author-{a}) if len(p.Author) > 1 else 0
 	, lambda a,p: int(p.Year)
+
+	, lambda a,p: lifted(common_neighbours, a, p.Author-{a}) if len(p.Author) > 1 else 0
+	, lambda a,p: lifted(jaccard, a, p.Author-{a}) if len(p.Author) > 1 else 0
+	, lambda a,p: lifted(adamic_adar, a, p.Author-{a}) if len(p.Author) > 1 else 0
+
+	, lambda a,p: lifted(common_neighbours, a, p.Author-{a}, relate('CoAuthor')) if len(p.Author) > 1 else 0
+	, lambda a,p: lifted(jaccard, a, p.Author-{a}, relate('CoAuthor')) if len(p.Author) > 1 else 0
+	, lambda a,p: lifted(adamic_adar, a, p.Author-{a}, relate('CoAuthor')) if len(p.Author) > 1 else 0
+
+	, lambda a,p: lifted(common_neighbours, a, p.Author-{a}, relate('Journal')) if len(p.Author) > 1 else 0
+	, lambda a,p: lifted(jaccard, a, p.Author-{a}, relate('Journal')) if len(p.Author) > 1 else 0
+	, lambda a,p: lifted(adamic_adar, a, p.Author-{a}, relate('Journal','Paper')) if len(p.Author) > 1 else 0
+	, lambda a,p: lifted(adamic_adar, a, p.Author-{a}, relate('Journal','Author')) if len(p.Author) > 1 else 0
+
+	, lambda a,p: lifted(common_neighbours, a, p.Author-{a}, relate('Conference')) if len(p.Author) > 1 else 0
+	, lambda a,p: lifted(jaccard, a, p.Author-{a}, relate('Conference')) if len(p.Author) > 1 else 0
+	, lambda a,p: lifted(adamic_adar, a, p.Author-{a}, relate('Conference','Paper')) if len(p.Author) > 1 else 0
+	, lambda a,p: lifted(adamic_adar, a, p.Author-{a}, relate('Conference','Author')) if len(p.Author) > 1 else 0
+
+	, lambda a,p: lifted(common_neighbours, p, a.Paper-{p}) if len(a.Paper) > 1 else 0
+	, lambda a,p: lifted(jaccard, p, a.Paper-{p}) if len(a.Paper) > 1 else 0
+	, lambda a,p: lifted(adamic_adar, p, a.Paper-{p}) if len(a.Paper) > 1 else 0
+	, lambda a,p: lifted(adamic_adar, p, a.Paper-{p}, relate('Author','Journal')) if len(a.Paper) > 1 else 0
+	, lambda a,p: lifted(adamic_adar, p, a.Paper-{p}, relate('Author','Conference')) if len(a.Paper) > 1 else 0
+
 	, lambda a,p: len(a.Voc & p.Voc)
+	, lambda a,p: sum(select(a.PrefVoc, p.Voc).values())
+
 	, lambda a,p: average([Scrabble(w) for w in p.Voc]) if p.Voc else 0
-	]
+	)
 
-# this will take awhile
-from kddload import *
+raw_data, labels = train_data()
 
-raw_data, train_data, labels = train_data(feature_set)
-
-classifier.fit(train_data, labels)
-
-predictions = classifier.predict_proba(train_data)[:,1]
+train            = feature_set(raw_data)
+classifier.fit(train, labels)
+predictions      = classifier.predict_proba(train)[:,1]
 print MAP(raw_data, labels, predictions)
 
-test_data = test_data(feature_set)
-predictions = classifier.predict_proba(test_data)[:,1]
+stop(here(now))
 
-write_csv(raw_data, test_data)
+raw_data    = test_data()
+test        = feature_set(raw_data)
+predictions = classifier.predict_proba(test)[:,1]
+
+write_csv(raw_data, predictions)
 
