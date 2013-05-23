@@ -126,7 +126,7 @@ def merge_features(set1, set2):
 #############################################################
 
 def bound(data, min=-float('inf'), max=+float('inf')):
-    if type(data) is list:
+    if type(data) in [list,tuple]:
 	return [bound(elem, min, max) for elem in data]
     elif data < min:
 	return min
