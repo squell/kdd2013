@@ -11,10 +11,7 @@ from kddutil import *
 
 db = dict()
 
-limit = int(sys.argv[1]) if len(sys.argv) > 1 else -1
-
 def read_csv(table, force_creation=False, missing=None):
-    global limit
     print "reading", table
     dataset = []
     db[table] = dataset
@@ -27,8 +24,6 @@ def read_csv(table, force_creation=False, missing=None):
 	return obj
 
     for row in csv.DictReader(open(table+".csv", 'rb')):
-	if limit == 0: break
-	limit -= 1
 	obj = record(row)
 
 	# add identifiable items
