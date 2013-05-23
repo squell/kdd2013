@@ -70,8 +70,8 @@ feature_set = features(
 	)
 
 
-raw_train, labels = train_data(shuffle=False)
-raw_test = test_data(shuffle=False)
+raw_train, labels = train_data()
+raw_test = test_data()
 
 print "featurizing trainset..."
 train = [(a.Id, p.Id) for a,p in raw_train], feature_set(raw_train), labels

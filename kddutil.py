@@ -140,9 +140,11 @@ def bound(data, min=-float('inf'), max=+float('inf')):
 # this just uses the hold-out method; CV is overrated :-)
 #############################################################
 
-def xval_split(ids, labels, features, ratio=0.2):
+def xval_split(ids, labels, features, ratio=0.2, shuffle=True):
     table = group_by_author(ids, features, labels)
     authors = table.keys()
+    if shuffle:
+	for a in authors: random.shuffle(table[a])
     random.shuffle(authors)
     N = int(ratio*len(authors))
     train = zip(*[tuple for a in authors[N:] for tuple in table[a]])
@@ -153,8 +155,15 @@ def xval_split(ids, labels, features, ratio=0.2):
 # demo: how to evaluate a classifier?
 #############################################################
 
-def evaluate(classifier, ids, features, labels):
-    train, (test,label) = xval_split(ids, labels, features)
+def evaluate(classifier, ids, features, labels, ratio=0.2, shuffle=True):
+    train, (test,label) = xval_split(ids, labels, features, ratio, shuffle)
     classifier.fit(*train)
     return MAP(ids, label, classifier.predict_proba(test)[:,1])
 
+#############################################################
+# turn stored data back into a input for map_score
+#############################################################
+
+def stored(ids, features):
+    table = dict(zip(ids,features))
+    return lambda a,p: table[a.Id,p.Id]
