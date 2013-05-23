@@ -109,14 +109,14 @@ def merge_features(set1, set2):
     (ids, features) or (ids, features, labels) and contain
     exactly the same ids (but perhaps in a different order)
     '''
+    set1 = zip(*sorted(zip(*set1)))
+    set2 = zip(*sorted(zip(*set2)))
+    if set1[0] <> set2[0] or set1[2:] <> set2[2:]:
+	raise Exception("datasets differ")
+    map(list.extend, set1[1], set2[1])
     set1 = zip(*set1)
-    set2 = zip(*set2)
-    table = {}
-    for row in set1:
-	table[row[0]] = list(row[1:])
-    for row in set2:
-	table[row[0]].append(row[1:])
-    return zip(*[[key]+row for key, row in table.iteritems()])
+    random.shuffle(set1)
+    return zip(*set1)
 
 #############################################################
 # make sure all data points are within certain boundaries
@@ -208,3 +208,4 @@ def uniq(ids, features, labels):
     pos = { id for (id,f,l) in data if l }
     neg = { id for (id,f,l) in data if not l }
     return zip(*[(id,f,l) for (id,f,l) in data if l in pos^neg])
+
