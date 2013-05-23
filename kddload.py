@@ -202,6 +202,9 @@ def collapse(table1, table2=None):
 def average(nums):
     return float(sum(nums))/len(nums)
 
+def median(nums):
+    return sorted(nums)[len(nums)/2]
+
 def geometric(nums):
     return math.pow(reduce(lambda x,y: x*y, nums, 1.0), 1.0/len(nums))
 
