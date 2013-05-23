@@ -56,18 +56,15 @@ def avg_prec(decide, ranked):
 # functions usable on processed and unprocessed data
 #############################################################
 
-def group_by_author(train_set, labels, predictions):
-    '''groups the results by author; use answers or papers as labels
-    input:
+def group_by_author(id_set, info_set):
+    '''groups the results by author; input:
 	list of tuples (having as first item an author/authorid)
-	list of labels
-	list of predicted values
-    returns: dictionary of author/authorid -> list of (label,score)
+	list of values (i.e. the result of a zip())
+    returns: dictionary of author/authorid -> list of value
     '''
     xlat = {}
-    # re-combine results for each author
-    for train, label, score in zip(train_set, labels, predictions):
-	xlat.setdefault(train[0], []).append((label,score))
+    for id, val in zip(id_set, info_set):
+	xlat.setdefault(id[0], []).append(val)
     return xlat
 
 def MAP(train_set, labels, predictions):
@@ -76,7 +73,7 @@ def MAP(train_set, labels, predictions):
     second: list of correct labels
     third: predictions
     '''
-    xlat = group_by_author(train_set, labels, predictions)
+    xlat = group_by_author(train_set, zip(labels, predictions))
     prec = 0
     N = 0
     for _, scores in xlat.iteritems():
@@ -91,7 +88,7 @@ def write_csv(train_set, predictions):
 
     authorIds = [(getId(a), ) for a,p in train_set]
     paperIds  = [getId(p) for a,p in train_set]
-    table = group_by_author(authorIds, paperIds, predictions)
+    table = group_by_author(authorIds, zip(paperIds, predictions))
 
     csv = open("output.csv", "w")
     print >> csv, "AuthorId, PaperIds"
@@ -141,7 +138,7 @@ def bound(data, min=-float('inf'), max=+float('inf')):
 #############################################################
 
 def xval_split(ids, labels, features, ratio=0.2, shuffle=True):
-    table = group_by_author(ids, features, labels)
+    table = group_by_author(ids, zip(ids, features, labels))
     authors = table.keys()
     if shuffle:
 	for a in authors: random.shuffle(table[a])
@@ -156,9 +153,11 @@ def xval_split(ids, labels, features, ratio=0.2, shuffle=True):
 #############################################################
 
 def evaluate(classifier, ids, features, labels, ratio=0.2, shuffle=True):
-    train, (test,label) = xval_split(ids, labels, features, ratio, shuffle)
-    classifier.fit(*train)
-    return MAP(ids, label, classifier.predict_proba(test)[:,1])
+    train, validate = xval_split(ids, labels, features, ratio, shuffle)
+    ids, features, labels = train
+    classifier.fit(features, labels)
+    ids, features, labels = validate
+    return MAP(ids, labels, classifier.predict_proba(features)[:,1])
 
 #############################################################
 # turn stored data back into a input for map_score
