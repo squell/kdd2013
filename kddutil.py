@@ -148,6 +148,19 @@ def xval_split(ids, labels, features, ratio=0.2, shuffle=True):
     valid = zip(*[tuple for a in authors[:N] for tuple in table[a]])
     return train, valid
 
+def xval_split_k(ids, labels, features, fold=10, shuffle=True):
+    table = group_by_author(ids, zip(ids, features, labels))
+    authors = table.keys()
+    if shuffle:
+	for a in authors: random.shuffle(table[a])
+        random.shuffle(authors)
+    N = int(len(authors)/fold)
+    for k in xrange(fold):
+	authors = authors[N:] + authors[:N]
+	train = zip(*[tuple for a in authors[N:] for tuple in table[a]])
+	valid = zip(*[tuple for a in authors[:N] for tuple in table[a]])
+	yield train, valid
+
 #############################################################
 # demo: how to evaluate a classifier?
 #############################################################
@@ -159,6 +172,25 @@ def evaluate(classifier, ids, features, labels, ratio=0.2, shuffle=True):
     ids, features, labels = validate
     return MAP(ids, labels, classifier.predict_proba(features)[:,1])
 
+def evaluate_k(classifier, ids, features, labels, fold=10, shuffle=True):
+    score = { id: 0.0 for id in ids }
+    for train, validate in xval_split_k(ids, labels, features, fold, shuffle):
+	ids, features, labels = train
+	classifier.fit(features, labels)
+	ids, features, labels = validate
+	for id, p in zip(ids, classifier.predict_proba(features)[:,1]):
+	    score[id] += p
+    return MAP(ids, labels, [score[x] for x in ids])
+
+def evaluate_k_(classifier, ids, features, labels, fold=10, shuffle=True):
+    score = 0
+    for train, validate in xval_split_k(ids, labels, features, fold, shuffle):
+	ids, features, labels = train
+	classifier.fit(features, labels)
+	ids, features, labels = validate
+	score += MAP(ids, labels, classifier.predict_proba(features)[:,1])
+    return score/float(fold)
+
 #############################################################
 # turn stored data back into a input for map_score
 #############################################################
@@ -166,3 +198,13 @@ def evaluate(classifier, ids, features, labels, ratio=0.2, shuffle=True):
 def stored(ids, features):
     table = dict(zip(ids,features))
     return lambda a,p: table[a.Id,p.Id]
+
+#############################################################
+# remove duplicates from a id,feat,label set
+#############################################################
+
+def uniq(ids, features, labels):
+    data = zip(ids,features,labels)
+    pos = { id for (id,f,l) in data if l }
+    neg = { id for (id,f,l) in data if not l }
+    return zip(*[(id,f,l) for (id,f,l) in data if l in pos^neg])

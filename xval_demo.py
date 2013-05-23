@@ -30,7 +30,9 @@ ids, info, labels = train
 
 info = kddutil.bound(info, max=10000)
 
-print kddutil.evaluate(ensemble.RandomForestClassifier(n_estimators=10), ids, info, labels)
+print kddutil.evaluate(ensemble.RandomForestClassifier(n_estimators=50, min_samples_split=10), ids, info, labels)
+print kddutil.evaluate_k(ensemble.RandomForestClassifier(n_estimators=50, min_samples_split=10), ids, info, labels, fold=3)
+print kddutil.evaluate_k_(ensemble.RandomForestClassifier(n_estimators=50,min_samples_split=10), ids, info, labels, fold=3)
 sys.exit()
 
 print "Random Forest"
