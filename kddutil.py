@@ -209,3 +209,17 @@ def uniq(ids, features, labels):
     neg = { id for (id,f,l) in data if not l }
     return zip(*[(id,f,l) for (id,f,l) in data if l in pos^neg])
 
+#############################################################
+# remove duplicates from a id,feat,label set
+#############################################################
+
+def memoise(f):
+    tab = {}
+    def proxy(*args):
+	if args in tab:
+		return tab[args]
+	else:
+		tab[args] = x = f(*args)
+		return x
+    return proxy
+

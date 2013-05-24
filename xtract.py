@@ -13,6 +13,30 @@ if len(sys.argv) <= 1:
 from scrabble import *
 
 feature_set = features(
+	  lambda a,p: max([ed_name(lnk.Affiliation, a.Affiliation) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+
+	, lambda a,p: common_neighbours(a,p.Journal,relate('Voc',default={'of'}))
+	, lambda a,p: jaccard(a,p.Journal,relate('Voc',default={'of'}))
+	, lambda a,p: preferential(a,p.Journal,relate('Voc',default={'of'}))
+	, lambda a,p: adamic_adar(a,p.Journal,lambda x: lenint(Voc[x]) if type(x) is str else x.Voc if 'Voc' in x else {'of'})
+
+	, lambda a,p: common_neighbours(a,p.Conference,relate('Voc',default={'of'}))
+	, lambda a,p: jaccard(a,p.Conference,relate('Voc',default={'of'}))
+	, lambda a,p: preferential(a,p.Conference,relate('Voc',default={'of'}))
+	, lambda a,p: adamic_adar(a,p.Conference,lambda x: lenint(Voc[x]) if type(x) is str else x.Voc if 'Voc' in x else {'of'})
+
+	, lambda a,p: lifted(common_neighbours, p.Journal,a.Paper,relate('Voc',default={'of'}))
+	, lambda a,p: lifted(jaccard, p.Journal,a.Paper,relate('Voc',default={'of'}))
+	, lambda a,p: lifted(preferential, p.Journal,a.Paper,relate('Voc',default={'of'}))
+	, lambda a,p: lifted(adamic_adar, p.Journal,a.Paper,lambda x: lenint(Voc[x]) if type(x) is str else x.Voc if 'Voc' in x else {'of'})
+
+	, lambda a,p: lifted(common_neighbours, p.Conference,a.Paper,relate('Voc',default={'of'}))
+	, lambda a,p: lifted(jaccard, p.Conference,a.Paper,relate('Voc',default={'of'}))
+	, lambda a,p: lifted(preferential, p.Conference,a.Paper,relate('Voc',default={'of'}))
+	, lambda a,p: lifted(adamic_adar, p.Conference,a.Paper,lambda x: lenint(Voc[x]) if type(x) is str else x.Voc if 'Voc' in x else {'of'})
+	)
+
+feature_set2 = features(
 	  lambda a,p: len(p.Journal.Paper & a.Paper) if p.Journal else 0
 	, lambda a,p: len(p.Conference.Paper & a.Paper) if p.Conference else 0
 	, lambda a,p: len(p.Journal.Author & a.CoAuthor) if p.Journal else 0

@@ -156,6 +156,10 @@ def make_word_cloud(restrict=False, excluded_papers=lambda x: x.ConfirmedPaper|x
 	selection = db['Author'].itervalues()
 
     F = db['Voc'] = {}
+    for pub in db['Journal'].values()+db['Conference'].values():
+	if pub.FullName:
+	    pub.Voc = set(map(normalize, pub.FullName.split()))
+	for w in pub.Voc: F[w] = F.get(w,0)+1
     for paper in db['Paper'].itervalues():
 	if paper.Title:
 	    paper.Voc = set(map(normalize, paper.Title.split()))
@@ -177,12 +181,15 @@ print "done"
 # neighbour definitions
 #############################################################
 
-def relate(*options):
+def relate(*options, **kwarg):
     def nb(rec):
 	for table in options:
 	    if table in rec: return rec[table]
 	#return set()
-	raise Exception("dead-end encountered!", rec)
+	try:
+	    return kwarg['default']
+	except KeyError:
+	    raise Exception("dead-end encountered!", rec)
     return nb
 
 default_nb = relate('Paper', 'Author')
