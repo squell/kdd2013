@@ -2,8 +2,6 @@
     some functions which are useful even without the kdd-database loaded in memory
 '''
 
-import random
-
 #############################################################
 # a less useful dictionary
 #############################################################
@@ -104,6 +102,8 @@ def write_csv(train_set, predictions):
 # - this saves recomputation
 #############################################################
 
+import random
+
 def merge_features(set1, set2):
     '''merge_features(set1, set2), where set1 and set2 be tuples of the form
     (ids, features) or (ids, features, labels) and contain
@@ -172,7 +172,7 @@ def evaluate(classifier, ids, features, labels, ratio=0.2, shuffle=True):
     ids, features, labels = validate
     return MAP(ids, labels, classifier.predict_proba(features)[:,1])
 
-def evaluate_k(classifier, ids, features, labels, fold=10, shuffle=True):
+def evaluate_k(classifier, ids, features, labels, fold=3, shuffle=True):
     score = { id: 0.0 for id in ids }
     for train, validate in xval_split_k(ids, labels, features, fold, shuffle):
 	ids, features, labels = train
@@ -182,7 +182,7 @@ def evaluate_k(classifier, ids, features, labels, fold=10, shuffle=True):
 	    score[id] += p
     return MAP(ids, labels, [score[x] for x in ids])
 
-def evaluate_k_(classifier, ids, features, labels, fold=10, shuffle=True):
+def evaluate_k_(classifier, ids, features, labels, fold=3, shuffle=True):
     score = 0
     for train, validate in xval_split_k(ids, labels, features, fold, shuffle):
 	ids, features, labels = train
@@ -222,4 +222,31 @@ def memoise(f):
 		tab[args] = x = f(*args)
 		return x
     return proxy
+
+#############################################################
+# a string cleaner
+#############################################################
+
+import re
+
+def sanitize(s):
+    return re.sub('[^\w]', ' ', s).strip().lower()
+
+#############################################################
+# a parallel map (inspired by ruben)
+#############################################################
+
+from multiprocessing import Queue, Process
+def multomap(f, work, j=2):
+    '''use as a simpe map taking a single list, run j jobs'''
+    N = len(work)
+    j = max(N,j)
+    def submap(start,stop,result):
+        result.put(map(f, work[start:stop]))
+
+    queues = map(Queue, range(j))
+    for (i,q) in enumerate(queues):
+        Process(target=submap, args=(N*i/j,N*(i+1)/j,q)).start()
+
+    return sum([q.get() for q in queues], [])
 
