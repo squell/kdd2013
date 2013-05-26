@@ -13,25 +13,29 @@ if len(sys.argv) <= 1:
     print "so what pkl do you want me to read, hm?"
     sys.exit()
 
-classifier = ensemble.RandomForestClassifier(
-		  verbose=10
-		 , oob_score=True
-		, n_estimators=50
-		, n_jobs=4
-		 , criterion='entropy'
-		 , compute_importances=True
-		#, random_state=1 #
-		, min_samples_split=10 #
-		)
+randomForest = ensemble.RandomForestClassifier(verbose=True
+        , n_estimators=80
+        , min_samples_split=10
+        , max_depth=14
+        , n_jobs=12
+        )
+
+gradBoost = ensemble.GradientBoostingClassifier(verbose=True
+        , n_estimators=100
+        , min_samples_split=10
+        , max_depth=5
+        )
+
+classifier = randomForest
 
 with open(sys.argv[1]) as infile:
     train, test = pickle.load(infile)
 
-train_ids, train_set, labels = train
+train_ids, train_set, labels = kddutil.uniq(*train)
 test_ids, test_set = test
 
-train_set = kddutil.bound(train_set, max=100000)
-test_set  = kddutil.bound(test_set, max=100000)
+train_set = kddutil.bound(train_set, max=10000, min=-10000)
+test_set  = kddutil.bound(test_set,  max=10000, min=-10000)
 
 classifier.fit(train_set, labels)
 
