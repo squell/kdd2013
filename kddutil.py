@@ -207,7 +207,8 @@ def uniq(ids, features, labels):
     data = zip(ids,features,labels)
     pos = { id for (id,f,l) in data if l }
     neg = { id for (id,f,l) in data if not l }
-    return zip(*[(id,f,l) for (id,f,l) in data if l in pos^neg])
+    diff = pos^neg
+    return zip(*[(id,f,l) for (id,f,l) in data if id in diff])
 
 #############################################################
 # remove duplicates from a id,feat,label set
