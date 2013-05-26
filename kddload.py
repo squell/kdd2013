@@ -46,8 +46,8 @@ def read_csv(table, force_creation=False, missing=None):
 		if not foreign: 
 		    #print "null foreign key:", table, newkey, val
 		    row[newkey] = foreign = missing and missing()
-		    foreign.Id = int(val)
-		    identify(db[newkey], foreign.Id, foreign)
+		    if missing: foreign.Id = int(val)
+		    identify(db[newkey], int(val), foreign)
 		if foreign:
 		    foreign.setdefault(table, set()).add(obj)
 	    elif key[-3:] == "Ids":
@@ -330,16 +330,6 @@ def map_score(score):
 # get input for a normal clsssifier
 #############################################################
 
-def features(*list_of_functions):
-    '''Some syntactic sugar'''
-    return lambda x: extract_features(list_of_functions, x)
-
-def parallel(j=4, *list_of_functions):
-    '''Same as features, but benefits from multicore'''
-    def process(item):
-	return multi(list_of_functions, *item)
-    return lambda data: multomap(process, data, j=j)
-
 def train_data(shuffle=True, selection=None):
     '''returns zip(author_set, paper_set), label_set '''
     A = []
@@ -369,10 +359,14 @@ def test_data(shuffle=True):
     if shuffle: random.shuffle(A)
     return A
 
-def extract_features(method, rawset):
-    '''you could implement this yourself'''
+def extract_features(method, rawset, n_jobs=None):
+    '''apply the method (a function or list of functions) for every item'''
     if callable(method):
-	return [(method(*item),) for item in rawset]
+	extract = lambda item: (method(*item),)
     else:
-	return [multi(method, *item) for item in rawset]
+	extract = lambda item: multi(method, *item)
+    if not n_jobs:
+	return [extract(item) for item in rawset]
+    else:
+	return multomap(extract, rawset, j=n_jobs)
 
