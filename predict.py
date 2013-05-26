@@ -31,7 +31,7 @@ classifier = randomForest
 with open(sys.argv[1]) as infile:
     train, test = pickle.load(infile)
 
-train_ids, train_set, labels = kddutil.uniq(*train)
+train_ids, train_set, labels = kddutil.disambiguate(*train)
 test_ids, test_set = test
 
 train_set = kddutil.bound(train_set, max=10000, min=-10000)

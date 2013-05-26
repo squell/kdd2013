@@ -22,14 +22,14 @@ randomForest = ensemble.RandomForestClassifier(verbose=True
 gradBoost = ensemble.GradientBoostingClassifier(verbose=True
 	, n_estimators=100
 	, min_samples_split=10
-	, max_depth=5
+	, max_depth=7
 	)
 
 with open(sys.argv[1]) as infile:
     train, _ = pickle.load(infile)
 
 # filter out entries which are marked both as positive AND negative
-ids, info, labels = kddutil.uniq(*train)
+ids, info, labels = kddutil.disambiguate(*train)
 
 info = kddutil.bound(info, max=10000, min=-10000)
 
@@ -37,5 +37,5 @@ print "Random Forest"
 print kddutil.evaluate_k_(randomForest, ids, info, labels)
 
 print "Gradient Boosting"
-print kddutil.evaluate_k_(gradBoost, ids, info, labels)
+print kddutil.evaluate(gradBoost, ids, info, labels)
 

@@ -203,7 +203,7 @@ def stored(ids, features):
 # remove duplicates from a id,feat,label set
 #############################################################
 
-def uniq(ids, features, labels):
+def disambiguate(ids, features, labels):
     data = zip(ids,features,labels)
     pos = { id for (id,f,l) in data if l }
     neg = { id for (id,f,l) in data if not l }
