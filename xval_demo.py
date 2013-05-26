@@ -28,19 +28,13 @@ with open(sys.argv[1]) as infile:
 
 ids, info, labels = train
 
-info = kddutil.bound(info, max=10000)
+info = kddutil.bound(info, max=10000, min=-10000)
 
 print "Random Forest"
-print kddutil.evaluate(ensemble.RandomForestClassifier(n_estimators=50, min_samples_split=15), ids, info, labels)
-print kddutil.evaluate(ensemble.RandomForestClassifier(n_estimators=50, min_samples_split=15), ids, info, labels)
-print kddutil.evaluate(ensemble.RandomForestClassifier(n_estimators=50, min_samples_split=15), ids, info, labels)
-
-print "ExtraTree Forest"
-print kddutil.evaluate(ensemble.ExtraTreesClassifier(n_estimators=50, min_samples_split=15), ids, info, labels)
-print kddutil.evaluate(ensemble.ExtraTreesClassifier(n_estimators=50, min_samples_split=15), ids, info, labels)
-print kddutil.evaluate(ensemble.ExtraTreesClassifier(n_estimators=50, min_samples_split=15), ids, info, labels)
-
+classifier = ensemble.RandomForestClassifier(n_estimators=80, min_samples_split=10, max_depth=14, n_jobs=15)
+print kddutil.evaluate_k_(classifier, ids, info, labels)
+sys.exit()
 print "Gradient Boosting"
-print kddutil.evaluate(ensemble.GradientBoostingClassifier(min_samples_split=15, max_depth=7), ids, info, labels)
-print kddutil.evaluate(ensemble.GradientBoostingClassifier(min_samples_split=15, max_depth=7), ids, info, labels)
-print kddutil.evaluate(ensemble.GradientBoostingClassifier(min_samples_split=15, max_depth=7), ids, info, labels)
+classifier = ensemble.GradientBoostingClassifier(verbose=True, n_estimators=100, min_samples_split=10, max_depth=3)
+print kddutil.evaluate_k_(classifier, ids, info, labels)
+
