@@ -1,5 +1,15 @@
 '''
- a demo on using kddload to get features
+   using kddload to extract features from the dataset; outputs a pickle file
+
+   containing:
+     (train, test)
+
+   where train = (ids, features, labels)
+         test = (ids, features)
+          where ids = [(authorId, paperId), ...]
+                features = list of 'feature vectors'
+                labels = list of True/False
+       
 '''
 
 from kddload import *          # this will take awhile

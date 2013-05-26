@@ -1,5 +1,6 @@
 '''
-  train a classifier and create predictions
+  train a classifier and create predictions for uploading 
+  (output.csv)
 '''
 
 import cPickle as pickle

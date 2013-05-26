@@ -1,5 +1,5 @@
 '''
-  demo of cross validation
+  a playground for evaluating classifiers
 '''
 
 import kddutil 

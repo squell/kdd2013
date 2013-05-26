@@ -1,5 +1,6 @@
 '''
-  estimate the quality of features in a pickle file
+  estimate the quality of features in a pickle file by showing the MAP if they
+  are used stand-alone
 '''
 
 from kddutil import *
