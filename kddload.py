@@ -158,11 +158,11 @@ def make_word_cloud(restrict=False, excluded_papers=lambda x: x.ConfirmedPaper|x
     F = db['Voc'] = {}
     for pub in db['Journal'].values()+db['Conference'].values():
 	if pub.FullName:
-	    pub.Voc = set(map(normalize, pub.FullName.split()))
+	    pub.Voc = set(normalize(pub.FullName or "").split())
 	for w in pub.Voc: F[w] = F.get(w,0)+1
     for paper in db['Paper'].itervalues():
 	if paper.Title:
-	    paper.Voc = set(map(normalize, paper.Title.split()))
+	    paper.Voc = set(normalize(paper.Title or "").split())
 	for w in paper.Voc: F[w] = F.get(w,0)+1
 
     for author in selection:
@@ -333,6 +333,12 @@ def map_score(score):
 def features(*list_of_functions):
     '''Some syntactic sugar'''
     return lambda x: extract_features(list_of_functions, x)
+
+def parallel(j=4, *list_of_functions):
+    '''Same as features, but benefits from multicore'''
+    def process(item):
+	return multi(list_of_functions, *item)
+    return lambda data: multomap(process, data, j=j)
 
 def train_data(shuffle=True, selection=None):
     '''returns zip(author_set, paper_set), label_set '''
