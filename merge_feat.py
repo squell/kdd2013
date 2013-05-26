@@ -1,5 +1,5 @@
 '''
-  estimate the quality of features in a pickle file
+  merge two feature-pickle files into a third
 '''
 
 from kddutil import *
