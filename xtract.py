@@ -108,6 +108,10 @@ feature_set2g = [
 	, lambda a,p: len(a.Voc ^ p.Voc)
 	, lambda a,p: lifted(adamic_adar, p,a.Paper,lambda x: lenint(Voc[x]) if type(x) is str else x.Voc if 'Voc' in x else {'of'})
 	, lambda a,p: sum(map(len, a.Voc & p.Voc))
+	, lambda a,p: min([ len(l.Name)  for l in a.PaperAuthor&p.PaperAuthor])
+	, lambda a,p: max([ len(l.Name)  for l in a.PaperAuthor&p.PaperAuthor])
+	, lambda a,p: min([ len(l.Affiliation)  for l in a.PaperAuthor&p.PaperAuthor])
+	, lambda a,p: max([ len(l.Affiliation)  for l in a.PaperAuthor&p.PaperAuthor])
 	]
 
 feature_set = [lambda a,p: 42]
