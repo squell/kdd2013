@@ -334,7 +334,6 @@ def train_data(shuffle=True, selection=None):
     '''returns zip(author_set, paper_set), label_set '''
     A = []
     for author, challenge in (selection or Train.iteritems()):
-	#set!
 	confirmed = [((author,p),True)  for p in challenge.ConfirmedPaper]
 	deleted   = [((author,p),False) for p in challenge.DeletedPaper]
 	entries = confirmed+deleted
@@ -356,7 +355,6 @@ def test_data(shuffle=True):
     returns zip(authorset, paperset) or
     returns zip(authorset, paperset), proccessed  if argument is given
     '''
-    #set!
     A = [(row.Author, p) for row in Valid.itervalues() for p in row.Paper]
     if shuffle: random.shuffle(A)
     return A
