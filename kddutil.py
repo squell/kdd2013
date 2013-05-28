@@ -268,11 +268,11 @@ from multiprocessing import Queue, Process
 def multomap(f, work, j=2):
     '''use as a simpe map taking a single list, run j jobs'''
     N = len(work)
-    j = max(N,j)
+    j = min(N,j)
     def submap(start,stop,result):
         result.put(map(f, work[start:stop]))
 
-    queues = map(Queue, range(j))
+    queues = map(Queue, [1]*j)
     for (i,q) in enumerate(queues):
         Process(target=submap, args=(N*i/j,N*(i+1)/j,q)).start()
 
