@@ -181,10 +181,7 @@ more_derived_features = [
 	, lambda a,p: lifted(adamic_adar,       p.Conference, a.CoAuthor, relate('Paper','Author')) if len(a.Paper) > 1 and p.Conference else 0
 ]
 
-if sys.argv <= 2:
-	feature_set = paper_features + direct_features + indirect_features + linksemantic_features + link_features + derived_direct_features + derived_indirect_features + more_derived_features
-else:
-	feature_set = locals()[sys.argv[2]]
+feature_set = paper_features + direct_features + indirect_features + linksemantic_features + link_features + derived_direct_features + derived_indirect_features + more_derived_features
 
 raw_train, labels = train_data()
 raw_test = test_data()
