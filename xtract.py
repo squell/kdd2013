@@ -12,7 +12,6 @@
        
 '''
 
-from kddload import *          # this will take awhile
 import cPickle as pickle
 import sys
 
@@ -21,6 +20,7 @@ if len(sys.argv) <= 1:
     sys.exit()
 
 from scrabble import *
+from kddload import *          # this will take awhile
 
 paper_features = [
 	  lambda a,p: int(p.Year)
@@ -141,20 +141,20 @@ derived_direct_features = [
 ]
  
 derived_indirect_features = [
-	#ale these are new-- watchout for default relate
+	#all these are new
 	  lambda a,p: lifted(common_neighbours, p.Journal, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Journal else 0
 	, lambda a,p: lifted(pseudojaccard,     p.Journal, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Journal else 0
 	, lambda a,p: lifted(preferential,      p.Journal, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Journal else 0
-	, lambda a,p: lifted(adamic_adar,       p.Journal, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Journal else 0
-	, lambda a,p: lifted(adamic_adar,       p.Journal, a.Paper-{p}, relate('Author','Journal')) if len(a.Paper) > 1 and p.Journal else 0
-	, lambda a,p: lifted(adamic_adar,       p.Journal, a.Paper-{p}, relate('Author','Conference')) if len(a.Paper) > 1 and p.Journal else 0
+	, lambda a,p: lifted(adamic_adar,       p.Journal, a.Paper-{p}, relate('Author','Paper')) if len(a.Paper) > 1 and p.Journal else 0
+	#, lambda a,p: lifted(adamic_adar,       p.Journal, a.Paper-{p}, relate('Author','Journal')) if len(a.Paper) > 1 and p.Journal else 0
+	#, lambda a,p: lifted(adamic_adar,       p.Journal, a.Paper-{p}, relate('Author','Conference')) if len(a.Paper) > 1 and p.Journal else 0
 
 	, lambda a,p: lifted(common_neighbours, p.Conference, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Conference else 0
 	, lambda a,p: lifted(pseudojaccard,     p.Conference, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Conference else 0
 	, lambda a,p: lifted(preferential,      p.Conference, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Conference else 0
-	, lambda a,p: lifted(adamic_adar,       p.Conference, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Conference else 0
-	, lambda a,p: lifted(adamic_adar,       p.Conference, a.Paper-{p}, relate('Author','Journal')) if len(a.Paper) > 1 and p.Conference else 0
-	, lambda a,p: lifted(adamic_adar,       p.Conference, a.Paper-{p}, relate('Author','Conference')) if len(a.Paper) > 1 and p.Conference else 0
+	, lambda a,p: lifted(adamic_adar,       p.Conference, a.Paper-{p}, relate('Author','Paper')) if len(a.Paper) > 1 and p.Conference else 0
+	#, lambda a,p: lifted(adamic_adar,       p.Conference, a.Paper-{p}, relate('Author','Journal')) if len(a.Paper) > 1 and p.Conference else 0
+	#, lambda a,p: lifted(adamic_adar,       p.Conference, a.Paper-{p}, relate('Author','Conference')) if len(a.Paper) > 1 and p.Conference else 0
 
 	#next are all upd
 	, lambda a,p: lifted(common_neighbours, p.Journal,a.Paper-{p},relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0
@@ -187,9 +187,9 @@ raw_train, labels = train_data()
 raw_test = test_data()
 
 print "featurizing trainset..."
-train = [(a.Id, p.Id) for a,p in raw_train], extract_features(feature_set,raw_train, n_jobs=12), labels
+train = [(a.Id, p.Id) for a,p in raw_train], extract_verbose(feature_set,raw_train), labels
 print "featurizing testset..."
-test  = [(a.Id, p.Id) for a,p in raw_test],  extract_features(feature_set,raw_test)
+test  = [(a.Id, p.Id) for a,p in raw_test],  extract_verbose(feature_set,raw_test)
 
 print "pickling..."
 with open(sys.argv[1], 'wb') as outfile:
