@@ -18,11 +18,11 @@ selected = map(int, sys.argv[3:])
 print "selected: ", selected
 
 ids, features, labels = train
-features = map(lambda feat: [row for (i,row) in enumerate(feat) if i in selected], features)
+features = map(lambda feat: [row for (i,row) in enumerate(feat,1) if i in selected], features)
 train = ids, features, labels
 
 ids, features = test
-features = map(lambda feat: [row for (i,row) in enumerate(feat) if i in selected], features)
+features = map(lambda feat: [row for (i,row) in enumerate(feat,1) if i in selected], features)
 test = ids, features
 
 print "writing"
