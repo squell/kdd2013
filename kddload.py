@@ -54,10 +54,10 @@ def read_csv(table, force_creation=False, missing=None):
 		# we dont back-reference these #
 		del row[key]
 		newkey = key[:-3]
-		row[newkey] = links = set()
+		row[newkey] = links = [] # must allow for duplicates
 		for subval in val.split():
 		    foreign = db[newkey][int(subval)]
-		    links.add(foreign)
+		    links.append(foreign)
 		    if not foreign: 
 			raise "warning foreign key:", newkey
 
@@ -96,11 +96,11 @@ for key in db:
 for author in db['Author'].values():
     if author.Train:
 	author.Train = author.Train.pop()
-	author.ConfirmedPaper = author.Train.ConfirmedPaper
-	author.DeletedPaper = author.Train.DeletedPaper
+	author.ConfirmedPaper = set(author.Train.ConfirmedPaper)
+	author.DeletedPaper = set(author.Train.DeletedPaper)
     if author.Valid:
 	author.Valid = author.Valid.pop()
-	author.CandidatePaper = author.Valid.Paper
+	author.CandidatePaper = set(author.Valid.Paper)
 
 def hardwire(table, relation, foreign):
     tmp = { link[foreign] for link in table.get(relation,[]) if foreign in link }
@@ -312,8 +312,8 @@ def map_rank(ranking):
     prec = 0
     N = 0
     for author, challenge in Train.iteritems():
-	confirmed = challenge.ConfirmedPaper
-	deleted   = challenge.DeletedPaper
+	confirmed = set(challenge.ConfirmedPaper)
+	deleted   = set(challenge.DeletedPaper)
 	maybe     = list(confirmed | deleted)
 	random.shuffle(maybe)
 	prec += avg_prec(lambda p: p in confirmed, ranking(author, maybe))
@@ -334,6 +334,7 @@ def train_data(shuffle=True, selection=None):
     '''returns zip(author_set, paper_set), label_set '''
     A = []
     for author, challenge in (selection or Train.iteritems()):
+	#set!
 	confirmed = [((author,p),True)  for p in challenge.ConfirmedPaper]
 	deleted   = [((author,p),False) for p in challenge.DeletedPaper]
 	entries = confirmed+deleted
@@ -355,6 +356,7 @@ def test_data(shuffle=True):
     returns zip(authorset, paperset) or
     returns zip(authorset, paperset), proccessed  if argument is given
     '''
+    #set!
     A = [(row.Author, p) for row in Valid.itervalues() for p in row.Paper]
     if shuffle: random.shuffle(A)
     return A
