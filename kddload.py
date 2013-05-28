@@ -260,6 +260,10 @@ def common_neighbours(a, b, G=default_nb):
 def jaccard(a, b, G=default_nb):
     return len(G(a) & G(b)) / float(len(G(a) | G(b)))
 
+# approximates jaccard if little overlap or large neighboursets
+def pseudojaccard(a, b, G=default_nb):
+    return len(G(a) & G(b)) / float(len(G(a)) + len(G(b)))
+
 def adamic_adar(a, b, G=default_nb, H=None):
     try:
 	return sum([1.0/math.log(len((H or G)(z))) for z in G(a) & G(b)])
