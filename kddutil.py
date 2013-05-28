@@ -65,7 +65,7 @@ def group_by_author(id_set, info_set):
 	xlat.setdefault(id[0], []).append(val)
     return xlat
 
-def MAP(train_set, labels, predictions):
+def MAP_pure(train_set, labels, predictions):
     '''calculates MAP for use with a sklearn-classifier
     first argument: raw-train data or a list of tuples of authorid,paperid
     second: list of correct labels
@@ -76,6 +76,25 @@ def MAP(train_set, labels, predictions):
     N = 0
     for _, scores in xlat.iteritems():
 	rank = sorted(scores, key=lambda x:x[1], reverse=True)
+	prec += avg_prec(lambda x:x[0], rank)
+	N += 1
+    return prec/float(N)
+
+# items with the same score are further sorted on id, then on label
+# this may seem strange, but may also better match Kaggle's algorithm
+
+def MAP(train_set, labels, predictions):
+    '''calculates MAP for use with a sklearn-classifier
+    first argument: raw-train data or a list of tuples of authorid,paperid
+    second: list of correct labels
+    third: predictions
+    '''
+    pids = [x[1] for x in train_set]
+    xlat = group_by_author(train_set, zip(labels, predictions, pids))
+    prec = 0
+    N = 0
+    for _, scores in xlat.iteritems():
+	rank = sorted(scores, key=lambda x:(x[1],x[2],x[0]), reverse=True)
 	prec += avg_prec(lambda x:x[0], rank)
 	N += 1
     return prec/float(N)
@@ -91,7 +110,7 @@ def write_csv(train_set, predictions):
     csv = open("output.csv", "w")
     print >> csv, "AuthorId, PaperIds"
     for authorId, ranking in table.iteritems():
-	ranking = sorted(ranking, key=lambda x:x[1], reverse=True)
+	ranking = sorted(ranking, key=lambda x:(x[1],x[0]), reverse=True)
 	print >> csv, "%d," % authorId,
 	for paperId, _ in ranking:
 	    print >> csv, paperId,
@@ -167,25 +186,15 @@ def xval_split_k(ids, labels, features, fold=10, shuffle=True):
 
 def evaluate(classifier, ids, features, labels, ratio=0.2, shuffle=True):
     train, validate = xval_split(ids, labels, features, ratio, shuffle)
-    ids, features, labels = train
+    ids, features, labels = disambiguate(*train)
     classifier.fit(features, labels)
     ids, features, labels = validate
     return MAP(ids, labels, classifier.predict_proba(features)[:,1])
 
 def evaluate_k(classifier, ids, features, labels, fold=3, shuffle=True):
-    score = { id: 0.0 for id in ids }
-    for train, validate in xval_split_k(ids, labels, features, fold, shuffle):
-	ids, features, labels = train
-	classifier.fit(features, labels)
-	ids, features, labels = validate
-	for id, p in zip(ids, classifier.predict_proba(features)[:,1]):
-	    score[id] += p
-    return MAP(ids, labels, [score[x] for x in ids])
-
-def evaluate_k_(classifier, ids, features, labels, fold=3, shuffle=True):
     score = 0
     for train, validate in xval_split_k(ids, labels, features, fold, shuffle):
-	ids, features, labels = train
+	ids, features, labels = disambiguate(*train)
 	classifier.fit(features, labels)
 	ids, features, labels = validate
 	score += MAP(ids, labels, classifier.predict_proba(features)[:,1])
@@ -200,15 +209,33 @@ def stored(ids, features):
     return lambda a,p: table[a.Id,p.Id]
 
 #############################################################
-# remove duplicates from a id,feat,label set
+# remove/relabel duplicates from a id,feat,label set
 #############################################################
 
 def disambiguate(ids, features, labels):
+    'totally remove data which is labelled inconsistently'
     data = zip(ids,features,labels)
     pos = { id for (id,f,l) in data if l }
     neg = { id for (id,f,l) in data if not l }
-    diff = pos^neg
-    return zip(*[(id,f,l) for (id,f,l) in data if id in diff])
+    uniq = pos^neg
+    return zip(*[row for row in data if row[0] in uniq])
+
+def relabel(ids, features, labels):
+    'relabel data: 0 = False, 1 = True, 2 = Ambiguous'
+    data = zip(ids,features,labels)
+    pos = { id for (id,f,l) in data if l }
+    neg = { id for (id,f,l) in data if not l }
+    uniq = pos^neg
+    dupl = pos&neg
+    return zip(*[(id,f,int(l) if id in uniq else 2) for (id,f,l) in data])
+
+def majority_vote(ids, features, labels):
+    'relabel data: 0 = False, 1 = True, 2 = Ambiguous; minimize ambiguities'
+    data = zip(ids,features,labels)
+    bal = {}
+    for (id,f,l) in data:
+	bal[id] = bal.get(id,0) + (2*l-1)
+    return zip(*[(id,f,bal[id]>=0 + bal[id]==0) for (id,f,l) in data])
 
 #############################################################
 # remove duplicates from a id,feat,label set
