@@ -222,17 +222,23 @@ def harmonic(nums):
 # aggregating functions
 #############################################################
 
-def combined(metric, a, bs, G=default_nb, aggregate=average):
-    return aggregate([ metric(a,b,G) for b in bs ])
+def combined(metric, a, bs, G=default_nb, H=None, aggregate=average):
+    if H:
+	return aggregate([ metric(a,b,G,H) for b in bs ])
+    else:
+	return aggregate([ metric(a,b,G) for b in bs ])
 
 def combined2(metric, xs, bs, G=default_nb, aggregate=average):
     return aggregate([ metric(a,b,G) for a in xs for b in bs ])
 
-def lifted(metric, a, bs, G=default_nb):
+def lifted(metric, a, bs, G=default_nb, H=None):
     big_b = set.union(*[G(b) for b in bs])
     def Gmod(obj):
 	return G(obj) if obj is not big_b else big_b
-    return metric(a, big_b, Gmod)
+    if H:
+	return metric(a, big_b, Gmod, H)
+    else:
+	return metric(a, big_b, Gmod)
 
 def lifted2(metric, xs, bs, G=default_nb):
     big_a = set.union(*[G(a) for a in xs])
@@ -254,9 +260,9 @@ def common_neighbours(a, b, G=default_nb):
 def jaccard(a, b, G=default_nb):
     return len(G(a) & G(b)) / float(len(G(a) | G(b)))
 
-def adamic_adar(a, b, G=default_nb):
+def adamic_adar(a, b, G=default_nb, H=None):
     try:
-	return sum([1.0/math.log(len(G(z))) for z in G(a) & G(b)])
+	return sum([1.0/math.log(len((H or G)(z))) for z in G(a) & G(b)])
     except ZeroDivisionError:
 	return float("inf")
 
