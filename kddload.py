@@ -380,3 +380,15 @@ def extract_features(method, rawset, n_jobs=None):
     else:
 	return multomap(extract, rawset, j=n_jobs)
 
+def extract_verbose(method, rawset, n_jobs=None):
+    '''use this for speed testing'''
+    result = []
+    N = float(len(rawset))
+    M = float(len(method))
+    for i, item in enumerate(rawset):
+        scores = []
+        for j, f in enumerate(method):
+            print "* %3.1f (%3.1f)\r" % (100*i/N,100*j/M),
+            scores.append(f(*item))
+        result.append(scores)
+    return result
