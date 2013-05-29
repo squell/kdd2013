@@ -235,11 +235,12 @@ def majority_vote(ids, features, labels):
     bal = {}
     for (id,f,l) in data:
 	bal[id] = bal.get(id,0) + (2*l-1)
-    return zip(*[(id,f,bal[id]>=0 + bal[id]==0) for (id,f,l) in data])
+    return zip(*[(id,f,(bal[id]>=0)+(bal[id]==0)) for (id,f,l) in data])
 
 def nodupes(ids, features, labels):
     'remove exact duplicates (but not ambiguous labels) -- changes order'
-    return zip(*set(zip(ids,features,labels)))
+    dct = { (id,l): f for (id,f,l) in zip(ids,features,labels) }
+    return zip(*[(id,f,l) for ((id,l),f) in dct.iteritems()])
 
 #############################################################
 # remove duplicates from a id,feat,label set
