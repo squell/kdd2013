@@ -191,7 +191,8 @@ def evaluate(classifier, ids, features, labels, ratio=0.2, shuffle=True):
     ids, features, labels = validate
     return MAP(ids, labels, classifier.predict_proba(features)[:,1])
 
-def evaluate_k(classifier, ids, features, labels, fold=3, shuffle=True):
+# calculate the average MAP for each score
+def evaluate_k_(classifier, ids, features, labels, fold=3, shuffle=True):
     score = 0
     for train, validate in xval_split_k(ids, labels, features, fold, shuffle):
 	ids, features, labels = disambiguate(*train)
@@ -199,6 +200,17 @@ def evaluate_k(classifier, ids, features, labels, fold=3, shuffle=True):
 	ids, features, labels = validate
 	score += MAP(ids, labels, classifier.predict_proba(features)[:,1])
     return score/float(fold)
+
+# calculate the overall MAP using scores obtained during folds
+def evaluate_k(classifier, ids, features, labels, fold=3, shuffle=True):
+    score = []
+    for train, validate in xval_split_k(ids, labels, features, fold, shuffle):
+        ids, features, labels = disambiguate(*train)
+        classifier.fit(features, labels)
+        ids, features, labels = validate
+        for id,l,p in zip(ids,labels,classifier.predict_proba(features)[:,1]):
+            score.append((id,l,p))
+    return MAP(*zip(*score))
 
 #############################################################
 # turn stored data back into a input for map_score
