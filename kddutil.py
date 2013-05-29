@@ -254,6 +254,13 @@ def nodupes(ids, features, labels):
     dct = { (id,l): f for (id,f,l) in zip(ids,features,labels) }
     return zip(*[(id,f,l) for ((id,l),f) in dct.iteritems()])
 
+def notrash(ids, features, labels, assumed=True):
+    'remove duplicates; replacing ambiguous with assumed -- changes order'
+    dct = {}
+    for (id,f,l) in zip(ids,features,labels):
+	dct[id] = (f,l if dct[id][1]==l else assumed) if id in dct else (f,l)
+    return zip(*[(id,f,l) for (id,(f,l)) in dct.iteritems()])
+
 #############################################################
 # remove duplicates from a id,feat,label set
 #############################################################
