@@ -91,12 +91,18 @@ indirect_features = [
 ]
 
 linksemantic_features = [
-	  lambda a,p: max([ed_name(lnk.Name, a.Name) for lnk in (a.PaperAuthor & p.PaperAuthor)])
-	, lambda a,p: max([ed_name(lnk.Affiliation, a.Affiliation) for lnk in (a.PaperAuthor & p.PaperAuthor)])
-	, lambda a,p: min([ len(l.Name)         for l in (a.PaperAuthor & p.PaperAuthor)])
+	  lambda a,p: min([ len(l.Name)         for l in (a.PaperAuthor & p.PaperAuthor)])
 	, lambda a,p: max([ len(l.Name)         for l in (a.PaperAuthor & p.PaperAuthor)])
 	, lambda a,p: min([ len(l.Affiliation)  for l in (a.PaperAuthor & p.PaperAuthor)])
 	, lambda a,p: max([ len(l.Affiliation)  for l in (a.PaperAuthor & p.PaperAuthor)])
+	, lambda a,p: min([ned(lnk.Name, a.Name) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+	, lambda a,p: max([ned(lnk.Name, a.Name) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+	, lambda a,p: min([ned(lnk.Affiliation, a.Affiliation) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+	, lambda a,p: max([ned(lnk.Affiliation, a.Affiliation) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+	, lambda a,p: min([lcstr(lnk.Name, a.Name) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+	, lambda a,p: max([lcstr(lnk.Name, a.Name) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+	, lambda a,p: min([lcstr(lnk.Affiliation, a.Affiliation) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+	, lambda a,p: max([lcstr(lnk.Affiliation, a.Affiliation) for lnk in (a.PaperAuthor & p.PaperAuthor)])
 ]
 
 link_features = [
@@ -181,7 +187,12 @@ more_derived_features = [
 	, lambda a,p: lifted(adamic_adar,       p.Conference, a.CoAuthor, relate('Paper','Author')) if len(a.Paper) > 1 and p.Conference else 0
 ]
 
-feature_set = paper_features + direct_features + indirect_features + linksemantic_features + link_features + derived_direct_features + derived_indirect_features + more_derived_features
+#certainly new
+cheat_features = [
+	  lambda a,p: Train[a].DeletedPaper.count(p)+Train[a].ConfirmedPaper.count(p) if a in Train else Valid[a].Paper.count(p)
+]
+
+feature_set = paper_features + direct_features + indirect_features + linksemantic_features + link_features + derived_direct_features + derived_indirect_features + more_derived_features + cheat_features
 
 raw_train, labels = train_data()
 raw_test = test_data()
