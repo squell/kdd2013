@@ -388,7 +388,7 @@ def extract_verbose(method, rawset, n_jobs=None):
     for i, item in enumerate(rawset):
         scores = []
         for j, f in enumerate(method):
-            print "% %3.1f (%3.1f)\r" % (100*i/N,100*j/M),
+            print "%% %3.1f (%3.1f)\r" % (100*i/N,100*j/M),
 	    sys.stdout.flush()
             scores.append(f(*item))
         result.append(scores)
