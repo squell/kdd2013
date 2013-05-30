@@ -255,6 +255,30 @@ def notrash(ids, features, labels=None, assumed=True):
     return zip(*[(id,f,l) for (id,(f,l)) in dct.iteritems()])
 
 #############################################################
+# square the trainset for pairwise learning
+#############################################################
+
+# can be optimized; if the mingle function is known
+# for example if mingle=operator.sub, C(x,y) = -C(y,x)
+
+def transform_pairwise(mingle, ids, *vectors):
+    'transform pointwise into pairwise input; assumes no duplicates in ids'
+    def deepmap(f, xs, ys):
+        try:
+            return [ deepmap(f,x,y) for (x,y) in zip(xs,ys) ]
+        except TypeError:
+            return f(xs,ys)
+
+    xlat = group_by_author(ids, zip(ids, *vectors))
+    for qid in xlat:
+	def pairing(x,y):
+	    newid = (qid,x[0][1],y[0][1])
+	    return (newid,)+tuple(deepmap(mingle,x[1:],y[1:]))
+        orig = xlat[qid]
+        xlat[qid] = [ pairing(x,y) for x in orig for y in orig ]
+    return zip(*sum(xlat.itervalues(),[]))
+
+#############################################################
 # remove duplicates from a id,feat,label set
 #############################################################
 
