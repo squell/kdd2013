@@ -34,19 +34,21 @@ class record (object):
 	return self.__dict__.get(name, set())
 
 #############################################################
-# average precision
+# average precision -- assumes you are not trying to cheat
 #############################################################
 
-def avg_prec(decide, ranked):
+def avg_prec(decide, ranked, expected=None):
     'decide: is sample positive? ranked: ranking produced'
     acc = 0
     TP = 0
+    seen = set()
     for P, paper in enumerate(ranked,1):
-	if decide(paper):
+	if decide(paper) and paper not in seen:
 	    TP  += 1
 	    acc += TP/float(P)
+	    seen.add(paper)
     try:
-	return acc / TP
+	return acc / (expected or TP)
     except ZeroDivisionError:
 	return 1.0
 
@@ -65,23 +67,8 @@ def group_by_author(id_set, info_set):
 	xlat.setdefault(id[0], []).append(val)
     return xlat
 
-def MAP_pure(train_set, labels, predictions):
-    '''calculates MAP for use with a sklearn-classifier
-    first argument: raw-train data or a list of tuples of authorid,paperid
-    second: list of correct labels
-    third: predictions
-    '''
-    xlat = group_by_author(train_set, zip(labels, predictions))
-    prec = 0
-    N = 0
-    for _, scores in xlat.iteritems():
-	rank = sorted(scores, key=lambda x:x[1], reverse=True)
-	prec += avg_prec(lambda x:x[0], rank)
-	N += 1
-    return prec/float(N)
-
-# items with the same score are further sorted on id, then on label
-# this may seem strange, but may also better match Kaggle's algorithm
+# items with the same score are further sorted on id, then on label(!)
+# this may seem strange, but intended so duplicates work correctly
 
 def MAP(train_set, labels, predictions):
     '''calculates MAP for use with a sklearn-classifier
@@ -182,30 +169,31 @@ def xval_split_k(ids, labels, features, fold=10, shuffle=True):
 
 #############################################################
 # demo: how to evaluate a classifier?
+# use postprocess in case special treatment of trainset is desired
 #############################################################
 
-def evaluate(classifier, ids, features, labels, ratio=0.2, shuffle=True):
+def evaluate(classifier, ids, features, labels, ratio=0.2, shuffle=True, postprocess=lambda *x: x):
     train, validate = xval_split(ids, labels, features, ratio, shuffle)
-    ids, features, labels = disambiguate(*train)
+    ids, features, labels = postprocess(*train)
     classifier.fit(features, labels)
     ids, features, labels = validate
     return MAP(ids, labels, classifier.predict_proba(features)[:,1])
 
 # calculate the average MAP for each score
-def evaluate_k_(classifier, ids, features, labels, fold=3, shuffle=True):
+def evaluate_k_(classifier, ids, features, labels, fold=3, shuffle=True, postprocess=lambda *x: x):
     score = 0
     for train, validate in xval_split_k(ids, labels, features, fold, shuffle):
-	ids, features, labels = disambiguate(*train)
+	ids, features, labels = postprocess(*train)
 	classifier.fit(features, labels)
 	ids, features, labels = validate
 	score += MAP(ids, labels, classifier.predict_proba(features)[:,1])
     return score/float(fold)
 
 # calculate the overall MAP using scores obtained during folds
-def evaluate_k(classifier, ids, features, labels, fold=3, shuffle=True):
+def evaluate_k(classifier, ids, features, labels, fold=3, shuffle=True, postprocess=lambda *x: x):
     score = []
     for train, validate in xval_split_k(ids, labels, features, fold, shuffle):
-        ids, features, labels = disambiguate(*train)
+        ids, features, labels = postprocess(*train)
         classifier.fit(features, labels)
         ids, features, labels = validate
         for id,l,p in zip(ids,labels,classifier.predict_proba(features)[:,1]):
@@ -249,13 +237,18 @@ def majority_vote(ids, features, labels):
 	bal[id] = bal.get(id,0) + (2*l-1)
     return zip(*[(id,f,(bal[id]>=0)+(bal[id]==0)) for (id,f,l) in data])
 
-def nodupes(ids, features, labels):
+def nodupes(ids, features, labels=None):
     'remove exact duplicates (but not ambiguous labels) -- changes order'
-    dct = { (id,l): f for (id,f,l) in zip(ids,features,labels) }
-    return zip(*[(id,f,l) for ((id,l),f) in dct.iteritems()])
+    if labels:
+	dct = { (id,l): f for (id,f,l) in zip(ids,features,labels) }
+	return zip(*[(id,f,l) for ((id,l),f) in dct.iteritems()])
+    else:
+	return zip(*dict(zip(ids,features)).iteritems())
 
-def notrash(ids, features, labels, assumed=True):
+def notrash(ids, features, labels=None, assumed=True):
     'remove duplicates; replacing ambiguous with assumed -- changes order'
+    if not labels: 
+	return nodupes(ids, features)
     dct = {}
     for (id,f,l) in zip(ids,features,labels):
 	dct[id] = (f,l if dct[id][1]==l else assumed) if id in dct else (f,l)
