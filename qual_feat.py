@@ -14,8 +14,8 @@ if len(sys.argv) <= 1:
 with open(sys.argv[1]) as infile:
     train, _ = pickle.load(infile)
 
-ids, info, labels = train
+ids, info, labels = notrash(*train)
 
 for i in xrange(len(info[0])):
-    print "%.2f,\t%.2f" % (MAP(ids,labels,[+x[i] for x in info]), MAP(ids,labels,[-x[i] for x in info]))
+    print "%.4f,\t%.4f" % (MAP(ids,labels,[+x[i] for x in info]), MAP(ids,labels,[-x[i] for x in info]))
 
