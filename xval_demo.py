@@ -35,8 +35,7 @@ gradBoost = ensemble.GradientBoostingClassifier(verbose=True
 with open(sys.argv[1]) as infile:
     train, _ = pickle.load(infile)
 
-# filter out entries which are marked both as positive AND negative
-ids, info, labels = train
+ids, info, labels = kddutil.notrash(*train)
 info = kddutil.bound(info, max=10000, min=-10000)
 
 print "Random Forest"
