@@ -31,11 +31,16 @@ classifier = randomForest
 with open(sys.argv[1]) as infile:
     train, test = pickle.load(infile)
 
-train_ids, train_set, labels = kddutil.notrash(*train)
-test_ids, test_set = kddutil.notrash(*test)
+if type(train[1][0]) == list:
+    train_ids, train_set, labels = kddutil.notrash(*train)
+    test_ids, test_set = kddutil.notrash(*test)
 
-train_set = kddutil.bound(train_set, max=10000, min=-10000)
-test_set  = kddutil.bound(test_set,  max=10000, min=-10000)
+    train_set = kddutil.bound(train_set, max=10000, min=-10000)
+    test_set  = kddutil.bound(test_set,  max=10000, min=-10000)
+else:
+    train_ids, train_set, labels = train
+    test_ids, test_set = test
+    print "assuming compacted data; skip preprocessing"
 
 classifier.fit(train_set, labels)
 
