@@ -269,14 +269,20 @@ def transform_pairwise(mingle, ids, *vectors):
         except TypeError:
             return f(xs,ys)
 
+    def mingle_features(id,x,y):
+	newid = (id,x[0][1],y[0][1])
+	return (newid,)+tuple(deepmap(mingle,x[1:],y[1:]))
+
+    out = []
     xlat = group_by_author(ids, zip(ids, *vectors))
-    for qid in xlat:
-	def pairing(x,y):
-	    newid = (qid,x[0][1],y[0][1])
-	    return (newid,)+tuple(deepmap(mingle,x[1:],y[1:]))
-        orig = xlat[qid]
-        xlat[qid] = [ pairing(x,y) for x in orig for y in orig ]
-    return zip(*sum(xlat.itervalues(),[]))
+    N = len(xlat.items())
+    M = 0.0
+    for qid, orig in xlat.iteritems():
+        M += 1.0
+        print M/N
+        pair = lambda x,y: mingle_features(qid,x,y)
+        out.extend([ pair(x,y) for x in orig for y in orig ])
+    return zip(*out)
 
 #############################################################
 # remove duplicates from a id,feat,label set
