@@ -239,7 +239,7 @@ def majority_vote(ids, features, labels):
 
 def nodupes(ids, features, labels=None):
     'remove exact duplicates (but not ambiguous labels) -- changes order'
-    if labels:
+    if labels is not None:
 	dct = { (id,l): f for (id,f,l) in zip(ids,features,labels) }
 	return zip(*[(id,f,l) for ((id,l),f) in dct.iteritems()])
     else:
@@ -247,7 +247,7 @@ def nodupes(ids, features, labels=None):
 
 def notrash(ids, features, labels=None, assumed=True):
     'remove duplicates; replacing ambiguous with assumed -- changes order'
-    if not labels: 
+    if labels is None: 
 	return nodupes(ids, features)
     dct = {}
     for (id,f,l) in zip(ids,features,labels):
