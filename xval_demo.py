@@ -35,8 +35,12 @@ gradBoost = ensemble.GradientBoostingClassifier(verbose=True
 with open(sys.argv[1]) as infile:
     train, _ = pickle.load(infile)
 
-ids, info, labels = kddutil.notrash(*train)
-info = kddutil.bound(info, max=10000, min=-10000)
+if type(train[1][0]) == list:
+    ids, info, labels = kddutil.notrash(*train)
+    info = kddutil.bound(info, max=10000, min=-10000)
+else:
+    ids, info, labels = train
+    print "assuming compacted data; skip preprocessing"
 
 print "Random Forest"
 print kddutil.evaluate_k(randomForest, ids, info, labels)
