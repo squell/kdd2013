@@ -17,7 +17,8 @@ randomForest = ensemble.RandomForestClassifier(verbose=True
         , n_estimators=80
         , min_samples_split=10
         , max_depth=14
-        , n_jobs=12
+        , bootstrap=False
+        , n_jobs=16
         )
 
 gradBoost = ensemble.GradientBoostingClassifier(verbose=True
