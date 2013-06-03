@@ -102,7 +102,7 @@ def write_csv(train_set, predictions):
 	for paperId, _ in ranking:
 	    print >> csv, paperId,
 	print >> csv
-    
+
 #############################################################
 # combining two sets of features 
 # - this saves recomputation
@@ -177,7 +177,8 @@ def evaluate(classifier, ids, features, labels, ratio=0.2, shuffle=True, postpro
     ids, features, labels = postprocess(*train)
     classifier.fit(features, labels)
     ids, features, labels = validate
-    return MAP(ids, labels, classifier.predict_proba(features)[:,1])
+    proba = classifier.predict_proba(features)
+    return MAP(ids, labels, proba[:,1])
 
 # calculate the average MAP for each score
 def evaluate_k_(classifier, ids, features, labels, fold=3, shuffle=True, postprocess=lambda *x: x):
@@ -186,7 +187,8 @@ def evaluate_k_(classifier, ids, features, labels, fold=3, shuffle=True, postpro
 	ids, features, labels = postprocess(*train)
 	classifier.fit(features, labels)
 	ids, features, labels = validate
-	score += MAP(ids, labels, classifier.predict_proba(features)[:,1])
+	proba = classifier.predict_proba(features)
+	score += MAP(ids, labels, proba[:,1])
     return score/float(fold)
 
 # calculate the overall MAP using scores obtained during folds
@@ -196,7 +198,8 @@ def evaluate_k(classifier, ids, features, labels, fold=3, shuffle=True, postproc
         ids, features, labels = postprocess(*train)
         classifier.fit(features, labels)
         ids, features, labels = validate
-        for id,l,p in zip(ids,labels,classifier.predict_proba(features)[:,1]):
+        proba = classifier.predict_proba(features)
+        for id,l,p in zip(ids,labels,proba[:,1]):
             score.append((id,l,p))
     return MAP(*zip(*score))
 
