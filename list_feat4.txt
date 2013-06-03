@@ -1,115 +1,116 @@
-0.7473,	0.6316	int(p.Year) # paper_features
-0.6048,	0.7816	len(p.Author)
-0.6727,	0.6727	len(p.CoAuthor)
-0.6618,	0.6681	len(p.Voc)
-0.7191,	0.6469	len(p.Journal.Paper) if p.Journal else 0
-0.7161,	0.6526	len(p.Journal.Author) if p.Journal else 0
-0.6522,	0.7136	len(p.Journal.Voc) if p.Journal else 0
-0.6511,	0.7157	len(p.Conference.Paper) if p.Conference else 0
-0.6508,	0.7171	len(p.Conference.Author) if p.Conference else 0
-0.7178,	0.6510	len(p.Conference.Voc) if p.Conference else 0
-0.6048,	0.7816	common_neighbours(a,p, relate('CoAuthor','Author')) # direct_features
-0.6048,	0.7816	jaccard          (a,p, relate('CoAuthor','Author'))
-0.6048,	0.7816	preferential     (a,p, relate('CoAuthor','Author'))
-0.5899,	0.7952	adamic_adar      (a,p, relate('CoAuthor','Author'))
-0.6997,	0.6584	common_neighbours(a,p, relate('Voc',default={'of'})) 
-0.7032,	0.6579	jaccard          (a,p, relate('Voc',default={'of'}))
-0.6646,	0.6719	preferential     (a,p, relate('Voc',default={'of'}))
-0.7067,	0.6553	adamic_adar      (a,p, relate('Voc',default={'of'}), lambda x: lenint(Voc[x]))
-0.7096,	0.6535	sum(map(len, a.Voc & p.Voc))
-0.6479,	0.6957	len(a.Voc ^ p.Voc)
-0.6936,	0.6598	sum(select(a.PrefVoc, p.Voc).values())
-0.6949,	0.6452	average([Scrabble(w) for w in p.Voc]) if p.Voc else 0
-0.6733,	0.7481	lifted(common_neighbours, a, p.Author-{a}) if len(p.Author) > 1 else 0 # indirect_features
-0.6460,	0.7635	lifted(jaccard,           a, p.Author-{a}) if len(p.Author) > 1 else 0
-0.7020,	0.7044	lifted(preferential,      a, p.Author-{a}) if len(p.Author) > 1 else 0
-0.6942,	0.7269	lifted(adamic_adar,       a, p.Author-{a}) if len(p.Author) > 1 else 0
-0.6277,	0.7990	lifted(common_neighbours, a, p.Author-{a}, relate('CoAuthor')) if len(p.Author) > 1 else 0
-0.6163,	0.7865	lifted(jaccard,           a, p.Author-{a}, relate('CoAuthor')) if len(p.Author) > 1 else 0
-0.6686,	0.7296	lifted(preferential,      a, p.Author-{a}, relate('CoAuthor')) if len(p.Author) > 1 else 0
-0.6230,	0.8142	lifted(adamic_adar,       a, p.Author-{a}, relate('CoAuthor')) if len(p.Author) > 1 else 0
-0.6626,	0.7517	lifted(common_neighbours, a, p.Author-{a}, relate('Journal')) if len(p.Author) > 1 else 0
-0.6471,	0.7590	lifted(jaccard,           a, p.Author-{a}, relate('Journal')) if len(p.Author) > 1 else 0
-0.6806,	0.7191	lifted(preferential,      a, p.Author-{a}, relate('Journal')) if len(p.Author) > 1 else 0
-0.6592,	0.7635	lifted(adamic_adar,       a, p.Author-{a}, relate('Journal','Paper')) if len(p.Author) > 1 else 0
-0.6600,	0.7619	lifted(adamic_adar,       a, p.Author-{a}, relate('Journal','Author')) if len(p.Author) > 1 else 0
-0.7192,	0.6843	lifted(common_neighbours, a, p.Author-{a}, relate('Conference')) if len(p.Author) > 1 else 0
-0.6859,	0.7152	lifted(jaccard,           a, p.Author-{a}, relate('Conference')) if len(p.Author) > 1 else 0
-0.7228,	0.6744	lifted(preferential,      a, p.Author-{a}, relate('Conference')) if len(p.Author) > 1 else 0
-0.7205,	0.6842	lifted(adamic_adar,       a, p.Author-{a}, relate('Conference','Paper')) if len(p.Author) > 1 else 0
-0.7212,	0.6839	lifted(adamic_adar,       a, p.Author-{a}, relate('Conference','Author')) if len(p.Author) > 1 else 0
-0.6587,	0.7176	lifted(common_neighbours, p, a.Paper-{p}) if len(a.Paper) > 1 else 0
-0.6587,	0.7176	lifted(jaccard,           p, a.Paper-{p}) if len(a.Paper) > 1 else 0
-0.6122,	0.7789	lifted(preferential,      p, a.Paper-{p}) if len(a.Paper) > 1 else 0
-0.6420,	0.7350	lifted(adamic_adar,       p, a.Paper-{p}) if len(a.Paper) > 1 else 0
-0.6507,	0.7271	lifted(adamic_adar,       p, a.Paper-{p}, relate('Author','Journal')) if len(a.Paper) > 1 else 0
-0.6413,	0.7282	lifted(adamic_adar,       p, a.Paper-{p}, relate('Author','Conference')) if len(a.Paper) > 1 else 0
-0.7160,	0.6327	lifted(common_neighbours, p, a.Paper-{p}, relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0 
-0.7160,	0.6327	lifted(jaccard,           p, a.Paper-{p}, relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0 
-0.6673,	0.6652	lifted(preferential,      p, a.Paper-{p}, relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0 
-0.7194,	0.6270	lifted(adamic_adar,       p, a.Paper-{p}, relate('Voc',default={'of'}), lambda x: lenint(Voc[x])) if len(a.Paper) > 1 else 0 
-0.6368,	0.7447	min([ len(l.Name)         for l in (a.PaperAuthor & p.PaperAuthor)]) # linksemantic_features
-0.6977,	0.6613	max([ len(l.Name)         for l in (a.PaperAuthor & p.PaperAuthor)])
-0.5905,	0.8457	min([ len(l.Affiliation)  for l in (a.PaperAuthor & p.PaperAuthor)])
-0.7967,	0.6205	max([ len(l.Affiliation)  for l in (a.PaperAuthor & p.PaperAuthor)])
-0.6740,	0.6722	min([ned(lnk.Name, a.Name) for lnk in (a.PaperAuthor & p.PaperAuthor)])
-0.7815,	0.6190	max([ned(lnk.Name, a.Name) for lnk in (a.PaperAuthor & p.PaperAuthor)])
-0.6728,	0.6726	min([ned(lnk.Affiliation, a.Affiliation) for lnk in (a.PaperAuthor & p.PaperAuthor)])
-0.9385,	0.5344	max([ned(lnk.Affiliation, a.Affiliation) for lnk in (a.PaperAuthor & p.PaperAuthor)])
-0.6196,	0.7801	min([lcstr(lnk.Name, a.Name) for lnk in (a.PaperAuthor & p.PaperAuthor)])
-0.6722,	0.6740	max([lcstr(lnk.Name, a.Name) for lnk in (a.PaperAuthor & p.PaperAuthor)])
-0.5614,	0.8916	min([lcstr(lnk.Affiliation, a.Affiliation) for lnk in (a.PaperAuthor & p.PaperAuthor)])
-0.6726,	0.6728	max([lcstr(lnk.Affiliation, a.Affiliation) for lnk in (a.PaperAuthor & p.PaperAuthor)])
-0.9492,	0.5256	common_neighbours(a, p, relate('PaperAuthor')) # link_features
-0.9540,	0.5222	jaccard          (a, p, relate('PaperAuthor')) 
-0.6493,	0.7032	preferential     (a, p, relate('PaperAuthor')) 
-0.7146,	0.6465	common_neighbours(a,p.Journal, relate('Paper')) if p.Journal else 0 # derived_direct_features
-0.6534,	0.7165	pseudojaccard    (a,p.Journal, relate('Paper')) if p.Journal else 0
-0.7191,	0.6469	preferential     (a,p.Journal, relate('Paper')) if p.Journal else 0
-0.7390,	0.6220	adamic_adar      (a,p.Journal, relate('Paper','Author')) if p.Journal else 0
-0.6532,	0.7114	common_neighbours(a,p.Conference, relate('Paper')) if p.Conference else 0
-0.7198,	0.6506	pseudojaccard    (a,p.Conference, relate('Paper')) if p.Conference else 0
-0.6511,	0.7157	preferential     (a,p.Conference, relate('Paper')) if p.Conference else 0
-0.6620,	0.7000	adamic_adar      (a,p.Conference, relate('Paper','Author')) if p.Conference else 0
-0.6957,	0.6791	common_neighbours(a,p.Journal, relate('CoAuthor','Author')) if p.Journal else 0
-0.6450,	0.7204	pseudojaccard    (a,p.Journal, relate('CoAuthor','Author')) if p.Journal else 0 
-0.7161,	0.6526	preferential     (a,p.Journal, relate('CoAuthor','Author')) if p.Journal else 0 
-0.6932,	0.6852	adamic_adar      (a,p.Journal, relate('CoAuthor','Author')) if p.Journal else 0 
-0.6600,	0.7024	adamic_adar      (a,p.Journal, relate('CoAuthor','Author'), relate('Paper')) if p.Journal else 0 
-0.6490,	0.7243	common_neighbours(a,p.Conference, relate('CoAuthor','Author')) if p.Conference else 0
-0.7160,	0.6519	pseudojaccard    (a,p.Conference, relate('CoAuthor','Author')) if p.Conference else 0
-0.6508,	0.7171	preferential     (a,p.Conference, relate('CoAuthor','Author')) if p.Conference else 0
-0.6484,	0.7258	adamic_adar      (a,p.Conference, relate('CoAuthor','Author')) if p.Conference else 0
-0.6536,	0.7194	adamic_adar      (a,p.Conference, relate('CoAuthor','Author'), relate('Paper')) if p.Conference else 0
-0.6805,	0.6660	common_neighbours(a,p.Journal,relate('Voc',default={'of'})) 
-0.6855,	0.6631	jaccard          (a,p.Journal,relate('Voc',default={'of'}))
-0.6641,	0.6878	preferential     (a,p.Journal,relate('Voc',default={'of'}))
-0.6810,	0.6661	adamic_adar      (a,p.Journal,relate('Voc',default={'of'}), lambda x: lenint(Voc[x]))
-0.6819,	0.6757	common_neighbours(a,p.Conference,relate('Voc',default={'of'}))
-0.6799,	0.6806	jaccard          (a,p.Conference,relate('Voc',default={'of'}))
-0.6962,	0.6619	preferential     (a,p.Conference,relate('Voc',default={'of'}))
-0.6880,	0.6732	adamic_adar      (a,p.Conference,relate('Voc',default={'of'}), lambda x: lenint(Voc[x]))
-0.7356,	0.6453	lifted(common_neighbours, p.Journal, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Journal else 0 # derived_indirect_features
-0.6655,	0.6857	lifted(pseudojaccard,     p.Journal, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Journal else 0
-0.7429,	0.6419	lifted(preferential,      p.Journal, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Journal else 0
-0.6959,	0.6601	lifted(adamic_adar,       p.Journal, a.Paper-{p}, relate('Author','Paper')) if len(a.Paper) > 1 and p.Journal else 0
-0.6926,	0.6842	lifted(common_neighbours, p.Conference, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Conference else 0
-0.7491,	0.6089	lifted(pseudojaccard,     p.Conference, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Conference else 0
-0.6913,	0.6848	lifted(preferential,      p.Conference, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Conference else 0
-0.6589,	0.7086	lifted(adamic_adar,       p.Conference, a.Paper-{p}, relate('Author','Paper')) if len(a.Paper) > 1 and p.Conference else 0
-0.6828,	0.6577	lifted(common_neighbours, p.Journal,a.Paper-{p},relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0
-0.6719,	0.6654	lifted(jaccard,           p.Journal,a.Paper-{p},relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0
-0.6630,	0.6854	lifted(preferential,      p.Journal,a.Paper-{p},relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0
-0.6795,	0.6617	lifted(adamic_adar,       p.Journal,a.Paper-{p},relate('Voc',default={'of'}), lambda x: lenint(Voc[x])) if len(a.Paper) > 1 else 0
-0.7061,	0.6632	lifted(common_neighbours, p.Conference,a.Paper-{p},relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0
-0.6813,	0.6895	lifted(jaccard,           p.Conference,a.Paper-{p},relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0
-0.7335,	0.6239	lifted(preferential,      p.Conference,a.Paper-{p},relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0
-0.7168,	0.6576	lifted(adamic_adar,       p.Conference,a.Paper-{p},relate('Voc',default={'of'}), lambda x: lenint(Voc[x])) if len(a.Paper) > 1 else 0
-0.7218,	0.6385	lifted(common_neighbours, p.Journal, a.CoAuthor, relate('Paper')) if len(a.Paper) > 1 and p.Journal else 0 # more_derived_features
-0.6803,	0.6799	lifted(pseudojaccard,     p.Journal, a.CoAuthor, relate('Paper')) if len(a.Paper) > 1 and p.Journal else 0
-0.7191,	0.6469	lifted(preferential,      p.Journal, a.CoAuthor, relate('Paper')) if len(a.Paper) > 1 and p.Journal else 0
-0.7385,	0.6191	lifted(adamic_adar,       p.Journal, a.CoAuthor, relate('Paper','Author')) if len(a.Paper) > 1 and p.Journal else 0
-0.6523,	0.7114	lifted(common_neighbours, p.Conference, a.CoAuthor, relate('Paper')) if len(a.Paper) > 1 and p.Conference else 0
-0.7121,	0.6637	lifted(pseudojaccard,     p.Conference, a.CoAuthor, relate('Paper')) if len(a.Paper) > 1 and p.Conference else 0
-0.6511,	0.7157	lifted(preferential,      p.Conference, a.CoAuthor, relate('Paper')) if len(a.Paper) > 1 and p.Conference else 0
-0.6616,	0.6971	lifted(adamic_adar,       p.Conference, a.CoAuthor, relate('Paper','Author')) if len(a.Paper) > 1 and p.Conference else 0
+0.7549	0.6385	int(p.Year) # paper_features
+0.6119	0.7894	len(p.Author)
+0.6795	0.6795	len(p.CoAuthor)
+0.6687	0.6752	len(p.Voc)
+0.7271	0.6535	len(p.Journal.Paper) if p.Journal else 0
+0.7240	0.6592	len(p.Journal.Author) if p.Journal else 0
+0.6587	0.7214	len(p.Journal.Voc) if p.Journal else 0
+0.6579	0.7230	len(p.Conference.Paper) if p.Conference else 0
+0.6576	0.7244	len(p.Conference.Author) if p.Conference else 0
+0.7251	0.6578	len(p.Conference.Voc) if p.Conference else 0
+0.6119	0.7894	common_neighbours(a,p, relate('CoAuthor','Author')) # direct_features
+0.6119	0.7894	jaccard          (a,p, relate('CoAuthor','Author'))
+0.6119	0.7894	preferential     (a,p, relate('CoAuthor','Author'))
+0.5970	0.8028	adamic_adar      (a,p, relate('CoAuthor','Author'))
+0.7068	0.6651	common_neighbours(a,p, relate('Voc',default={'of'})) 
+0.7104	0.6645	jaccard          (a,p, relate('Voc',default={'of'}))
+0.6713	0.6789	preferential     (a,p, relate('Voc',default={'of'}))
+0.7139	0.6619	adamic_adar      (a,p, relate('Voc',default={'of'}), lambda x: lenint(Voc[x]))
+0.7168	0.6602	sum(map(len, a.Voc & p.Voc))
+0.6546	0.7031	len(a.Voc ^ p.Voc)
+0.7007	0.6666	sum(select(a.PrefVoc, p.Voc).values())
+0.7022	0.6520	average([Scrabble(w) for w in p.Voc]) if p.Voc else 0
+0.6805	0.7560	lifted(common_neighbours, a, p.Author-{a}) if len(p.Author) > 1 else 0 # indirect_features
+0.6528	0.7712	lifted(jaccard,           a, p.Author-{a}) if len(p.Author) > 1 else 0
+0.7094	0.7122	lifted(preferential,      a, p.Author-{a}) if len(p.Author) > 1 else 0
+0.7016	0.7347	lifted(adamic_adar,       a, p.Author-{a}) if len(p.Author) > 1 else 0
+0.6345	0.8078	lifted(common_neighbours, a, p.Author-{a}, relate('CoAuthor')) if len(p.Author) > 1 else 0
+0.6229	0.7947	lifted(jaccard,           a, p.Author-{a}, relate('CoAuthor')) if len(p.Author) > 1 else 0
+0.6755	0.7376	lifted(preferential,      a, p.Author-{a}, relate('CoAuthor')) if len(p.Author) > 1 else 0
+0.6297	0.8229	lifted(adamic_adar,       a, p.Author-{a}, relate('CoAuthor')) if len(p.Author) > 1 else 0
+0.6695	0.7598	lifted(common_neighbours, a, p.Author-{a}, relate('Journal')) if len(p.Author) > 1 else 0
+0.6540	0.7669	lifted(jaccard,           a, p.Author-{a}, relate('Journal')) if len(p.Author) > 1 else 0
+0.6876	0.7270	lifted(preferential,      a, p.Author-{a}, relate('Journal')) if len(p.Author) > 1 else 0
+0.6662	0.7716	lifted(adamic_adar,       a, p.Author-{a}, relate('Journal','Paper')) if len(p.Author) > 1 else 0
+0.6670	0.7700	lifted(adamic_adar,       a, p.Author-{a}, relate('Journal','Author')) if len(p.Author) > 1 else 0
+0.7268	0.6915	lifted(common_neighbours, a, p.Author-{a}, relate('Conference')) if len(p.Author) > 1 else 0
+0.6934	0.7225	lifted(jaccard,           a, p.Author-{a}, relate('Conference')) if len(p.Author) > 1 else 0
+0.7305	0.6818	lifted(preferential,      a, p.Author-{a}, relate('Conference')) if len(p.Author) > 1 else 0
+0.7281	0.6915	lifted(adamic_adar,       a, p.Author-{a}, relate('Conference','Paper')) if len(p.Author) > 1 else 0
+0.7289	0.6912	lifted(adamic_adar,       a, p.Author-{a}, relate('Conference','Author')) if len(p.Author) > 1 else 0
+0.6659	0.7248	lifted(common_neighbours, p, a.Paper-{p}) if len(a.Paper) > 1 else 0
+0.6659	0.7248	lifted(jaccard,           p, a.Paper-{p}) if len(a.Paper) > 1 else 0
+0.6193	0.7867	lifted(preferential,      p, a.Paper-{p}) if len(a.Paper) > 1 else 0
+0.6494	0.7421	lifted(adamic_adar,       p, a.Paper-{p}) if len(a.Paper) > 1 else 0
+0.6580	0.7341	lifted(adamic_adar,       p, a.Paper-{p}, relate('Author','Journal')) if len(a.Paper) > 1 else 0
+0.6480	0.7358	lifted(adamic_adar,       p, a.Paper-{p}, relate('Author','Conference')) if len(a.Paper) > 1 else 0
+0.7240	0.6391	lifted(common_neighbours, p, a.Paper-{p}, relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0 
+0.7240	0.6391	lifted(jaccard,           p, a.Paper-{p}, relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0 
+0.6742	0.6722	lifted(preferential,      p, a.Paper-{p}, relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0 
+0.7274	0.6333	lifted(adamic_adar,       p, a.Paper-{p}, relate('Voc',default={'of'}), lambda x: lenint(Voc[x])) if len(a.Paper) > 1 else 0 
+0.6437	0.7522	min([ len(l.Name)         for l in (a.PaperAuthor & p.PaperAuthor)]) # linksemantic_features
+0.7045	0.6681	max([ len(l.Name)         for l in (a.PaperAuthor & p.PaperAuthor)])
+0.5974	0.8534	min([ len(l.Affiliation)  for l in (a.PaperAuthor & p.PaperAuthor)])
+0.8045	0.6273	max([ len(l.Affiliation)  for l in (a.PaperAuthor & p.PaperAuthor)])
+0.6808	0.6789	min([ned(lnk.Name, a.Name) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+0.7892	0.6259	max([ned(lnk.Name, a.Name) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+0.6796	0.6794	min([ned(lnk.Affiliation, a.Affiliation) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+0.9474	0.5416	max([ned(lnk.Affiliation, a.Affiliation) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+0.6266	0.7878	min([lcstr(lnk.Name, a.Name) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+0.6789	0.6808	max([lcstr(lnk.Name, a.Name) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+0.5685	0.9000	min([lcstr(lnk.Affiliation, a.Affiliation) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+0.6794	0.6796	max([lcstr(lnk.Affiliation, a.Affiliation) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+0.9580	0.5328	common_neighbours(a, p, relate('PaperAuthor')) # link_features
+0.9633	0.5297	jaccard          (a, p, relate('PaperAuthor')) 
+0.6562	0.7108	preferential     (a, p, relate('PaperAuthor')) 
+0.7223	0.6529	common_neighbours(a,p.Journal, relate('Paper')) if p.Journal else 0 # derived_direct_features
+0.6602	0.7244	pseudojaccard    (a,p.Journal, relate('Paper')) if p.Journal else 0
+0.7271	0.6535	preferential     (a,p.Journal, relate('Paper')) if p.Journal else 0
+0.7470	0.6283	adamic_adar      (a,p.Journal, relate('Paper','Author')) if p.Journal else 0
+0.6600	0.7186	common_neighbours(a,p.Conference, relate('Paper')) if p.Conference else 0
+0.7272	0.6574	pseudojaccard    (a,p.Conference, relate('Paper')) if p.Conference else 0
+0.6579	0.7230	preferential     (a,p.Conference, relate('Paper')) if p.Conference else 0
+0.6688	0.7071	adamic_adar      (a,p.Conference, relate('Paper','Author')) if p.Conference else 0
+0.7035	0.6856	common_neighbours(a,p.Journal, relate('CoAuthor','Author')) if p.Journal else 0
+0.6516	0.7283	pseudojaccard    (a,p.Journal, relate('CoAuthor','Author')) if p.Journal else 0 
+0.7240	0.6592	preferential     (a,p.Journal, relate('CoAuthor','Author')) if p.Journal else 0 
+0.7010	0.6916	adamic_adar      (a,p.Journal, relate('CoAuthor','Author')) if p.Journal else 0 
+0.6673	0.7090	adamic_adar      (a,p.Journal, relate('CoAuthor','Author'), relate('Paper')) if p.Journal else 0 
+0.6557	0.7317	common_neighbours(a,p.Conference, relate('CoAuthor','Author')) if p.Conference else 0
+0.7234	0.6587	pseudojaccard    (a,p.Conference, relate('CoAuthor','Author')) if p.Conference else 0
+0.6576	0.7244	preferential     (a,p.Conference, relate('CoAuthor','Author')) if p.Conference else 0
+0.6552	0.7332	adamic_adar      (a,p.Conference, relate('CoAuthor','Author')) if p.Conference else 0
+0.6604	0.7266	adamic_adar      (a,p.Conference, relate('CoAuthor','Author'), relate('Paper')) if p.Conference else 0
+0.6873	0.6727	common_neighbours(a,p.Journal,relate('Voc',default={'of'})) 
+0.6924	0.6698	jaccard          (a,p.Journal,relate('Voc',default={'of'}))
+0.6708	0.6948	preferential     (a,p.Journal,relate('Voc',default={'of'}))
+0.6879	0.6728	adamic_adar      (a,p.Journal,relate('Voc',default={'of'}), lambda x: lenint(Voc[x]))
+0.6887	0.6825	common_neighbours(a,p.Conference,relate('Voc',default={'of'}))
+0.6868	0.6875	jaccard          (a,p.Conference,relate('Voc',default={'of'}))
+0.7032	0.6687	preferential     (a,p.Conference,relate('Voc',default={'of'}))
+0.6949	0.6801	adamic_adar      (a,p.Conference,relate('Voc',default={'of'}), lambda x: lenint(Voc[x]))
+0.7437	0.6519	lifted(common_neighbours, p.Journal, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Journal else 0 # derived_indirect_features
+0.6722	0.6936	lifted(pseudojaccard,     p.Journal, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Journal else 0
+0.7511	0.6486	lifted(preferential,      p.Journal, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Journal else 0
+0.7033	0.6668	lifted(adamic_adar,       p.Journal, a.Paper-{p}, relate('Author','Paper')) if len(a.Paper) > 1 and p.Journal else 0
+0.6995	0.6915	lifted(common_neighbours, p.Conference, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Conference else 0
+0.7567	0.6158	lifted(pseudojaccard,     p.Conference, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Conference else 0
+0.6984	0.6921	lifted(preferential,      p.Conference, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Conference else 0
+0.6657	0.7160	lifted(adamic_adar,       p.Conference, a.Paper-{p}, relate('Author','Paper')) if len(a.Paper) > 1 and p.Conference else 0
+0.6896	0.6645	lifted(common_neighbours, p.Journal,a.Paper-{p},relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0
+0.6787	0.6726	lifted(jaccard,           p.Journal,a.Paper-{p},relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0
+0.6697	0.6929	lifted(preferential,      p.Journal,a.Paper-{p},relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0
+0.6862	0.6687	lifted(adamic_adar,       p.Journal,a.Paper-{p},relate('Voc',default={'of'}), lambda x: lenint(Voc[x])) if len(a.Paper) > 1 else 0
+0.7133	0.6701	lifted(common_neighbours, p.Conference,a.Paper-{p},relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0
+0.6880	0.6971	lifted(jaccard,           p.Conference,a.Paper-{p},relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0
+0.7415	0.6303	lifted(preferential,      p.Conference,a.Paper-{p},relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0
+0.7240	0.6644	lifted(adamic_adar,       p.Conference,a.Paper-{p},relate('Voc',default={'of'}), lambda x: lenint(Voc[x])) if len(a.Paper) > 1 else 0
+0.7298	0.6448	lifted(common_neighbours, p.Journal, a.CoAuthor, relate('Paper')) if len(a.Paper) > 1 and p.Journal else 0 # more_derived_features
+0.6873	0.6874	lifted(pseudojaccard,     p.Journal, a.CoAuthor, relate('Paper')) if len(a.Paper) > 1 and p.Journal else 0
+0.7271	0.6535	lifted(preferential,      p.Journal, a.CoAuthor, relate('Paper')) if len(a.Paper) > 1 and p.Journal else 0
+0.7466	0.6254	lifted(adamic_adar,       p.Journal, a.CoAuthor, relate('Paper','Author')) if len(a.Paper) > 1 and p.Journal else 0
+0.6591	0.7186	lifted(common_neighbours, p.Conference, a.CoAuthor, relate('Paper')) if len(a.Paper) > 1 and p.Conference else 0
+0.7194	0.6706	lifted(pseudojaccard,     p.Conference, a.CoAuthor, relate('Paper')) if len(a.Paper) > 1 and p.Conference else 0
+0.6579	0.7230	lifted(preferential,      p.Conference, a.CoAuthor, relate('Paper')) if len(a.Paper) > 1 and p.Conference else 0
+0.6683	0.7042	lifted(adamic_adar,       p.Conference, a.CoAuthor, relate('Paper','Author')) if len(a.Paper) > 1 and p.Conference else 0
+0.6926	0.6740	Train[a].DeletedPaper.count(p)+Train[a].ConfirmedPaper.count(p) if a in Train else Valid[a].Paper.count(p)
