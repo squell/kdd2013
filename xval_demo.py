@@ -16,7 +16,8 @@ randomForest = ensemble.RandomForestClassifier(verbose=False
 	, n_estimators=80
 	, min_samples_split=10
 	, max_depth=14
-	, n_jobs=15
+	, bootstrap=False
+	, n_jobs=16
 	)
 
 randomForestRegress = ensemble.RandomForestClassifier(verbose=True
@@ -43,7 +44,7 @@ else:
     print "assuming compacted data; skip preprocessing"
 
 print "Random Forest"
-print kddutil.evaluate_k(randomForest, ids, info, labels)
+print kddutil.evaluate_k(randomForest, ids, info, labels, fold=3)#, postprocess=kddutil.disambiguate)
 
 #print "Gradient Boosting"
 #print kddutil.evaluate(gradBoost, ids, info, labels)
