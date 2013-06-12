@@ -1,0 +1,14 @@
+ 64 0.9540, 0.5222 jaccard (a, p, relate('PaperAuthor'))
+ 58 0.9385, 0.5344 max([ned(lnk.Affiliation, a.Affiliation) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+ 30 0.6230, 0.8142 lifted(adamic_adar, a, p.Author-{a}, relate('CoAuthor')) if len(p.Author) > 1 else 0
+ 14 0.5899, 0.7952 adamic_adar (a,p, relate('CoAuthor','Author'))
+ 2 0.6048, 0.7816 len(p.Author)
+ 56 0.7815, 0.6190 max([ned(lnk.Name, a.Name) for lnk in (a.PaperAuthor & p.PaperAuthor)])
+ 34 0.6592, 0.7635 lifted(adamic_adar, a, p.Author-{a}, relate('Journal','Paper')) if len(p.Author) > 1 else 0
+ 24 0.6460, 0.7635 lifted(jaccard, a, p.Author-{a}) if len(p.Author) > 1 else 0
+ 1 0.7473, 0.6316 int(p.Year) # paper_features
+ 69 0.7390, 0.6220 adamic_adar (a,p.Journal, relate('Paper','Author')) if p.Journal else 0
+ 111 0.7385, 0.6191 lifted(adamic_adar, p.Journal, a.CoAuthor, relate('Paper','Author')) if len(a.Paper) > 1 and p.Journal else 0
+ 92 0.7356, 0.6453 lifted(common_neighbours, p.Journal, a.Paper-{p}, relate('Author')) if len(a.Paper) > 1 and p.Journal else 0 # derived_indirect_features
+ 44 0.6420, 0.7350 lifted(adamic_adar, p, a.Paper-{p}) if len(a.Paper) > 1 else 0
+ 106 0.7335, 0.6239 lifted(preferential, p.Conference,a.Paper-{p},relate('Voc',default={'of'})) if len(a.Paper) > 1 else 0
