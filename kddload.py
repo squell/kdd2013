@@ -162,8 +162,13 @@ def make_word_cloud(restrict=False, excluded_papers=lambda x: x.ConfirmedPaper|x
 	for w in pub.Voc: F[w] = F.get(w,0)+1
     for paper in db['Paper'].itervalues():
 	if paper.Title:
-	    paper.Voc = set(normalize(paper.Title or "").split())
+	    words = normalize(paper.Title or "").split()
+	    paper.Voc = set(words)
+	    paper.Bigram = set(zip(words,words[1:]))
 	for w in paper.Voc: F[w] = F.get(w,0)+1
+    for paper in db['Paper'].itervalues():
+	if paper.Keyword:
+	    paper.KeyVoc = set(normalize(paper.Title or "").split())
 
     for author in selection:
 	admissable = author.Paper - excluded_papers(author)

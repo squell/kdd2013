@@ -192,7 +192,18 @@ cheat_features = [
 	  lambda a,p: Train[a].DeletedPaper.count(p)+Train[a].ConfirmedPaper.count(p) if a in Train else Valid[a].Paper.count(p)
 ]
 
-feature_set = paper_features + direct_features + indirect_features + linksemantic_features + link_features + derived_direct_features + derived_indirect_features + more_derived_features + cheat_features
+#last minute
+keyword_bigram_features = [
+	  lambda a,p: lifted(common_neighbours, p, a.Paper-{p}, relate('KeyVoc',default={'of'})) if len(a.Paper) > 1 else 0
+	, lambda a,p: lifted(jaccard,           p, a.Paper-{p}, relate('KeyVoc',default={'of'})) if len(a.Paper) > 1 else 0
+	, lambda a,p: lifted(preferential,      p, a.Paper-{p}, relate('KeyVoc',default={'of'})) if len(a.Paper) > 1 else 0
+	, lambda a,p: lifted(adamic_adar,       p, a.Paper-{p}, relate('KeyVoc',default={'of'}), lambda x: lenint(Voc[x])) if len(a.Paper) > 1 else 0 
+
+	, lambda a,p: lifted(common_neighbours, p, a.Paper-{p}, relate('Bigram',default=set())) if len(a.Paper) > 1 else 0
+	, lambda a,p: lifted(preferential,      p, a.Paper-{p}, relate('Bigram',default=set())) if len(a.Paper) > 1 else 0 
+]
+
+feature_set = paper_features + direct_features + indirect_features + linksemantic_features + link_features + derived_direct_features + derived_indirect_features + more_derived_features + cheat_features + keyword_bigram_features
 
 raw_train, labels = train_data()
 raw_test = test_data()
